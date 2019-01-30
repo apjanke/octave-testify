@@ -22,11 +22,11 @@
 ## @deftypefnx {} {} test @var{name} quiet|normal|verbose
 ## @deftypefnx {} {} test ("@var{name}", "quiet|normal|verbose", @var{fid})
 ## @deftypefnx {} {} test ("@var{name}", "quiet|normal|verbose", @var{fname})
-## @deftypefnx {} {@var{success} =} test (@dots{})
+## @deftypefnx {} {@var{success}, @var{__rslt__} =} test (@dots{})
+## @deftypefnx {} {[@var{n}, @var{nmax}, @var{nxfail}, @var{nbug}, @var{nskip}, @var{nrtskip}, @var{nregression}] =} test (@dots{})
 ## @deftypefnx {} {[@var{code}, @var{idx}] =} test ("@var{name}", "grabdemo")
 ## @deftypefnx {} {} test ([], "explain", @var{fid})
 ## @deftypefnx {} {} test ([], "explain", @var{fname})
-## @deftypefnx {} {__rslt__ =} test (...)
 ##
 ## Perform built-in self-tests from the first file in the loadpath matching
 ## @var{name}.
@@ -78,15 +78,11 @@
 ## processing, but still print the results to the screen, use @code{stdout} for
 ## @var{fid}.
 ##
-## When called with just a single output argument @var{success}, @code{test}
-## returns true if all of the tests were successful.  If called with more
-## than one output argument then the number of successful tests (@var{n}),
-## the total number of tests in the file (@var{nmax}), the number of xtest
-## failures (@var{nxfail}), the number of tests failed due known bugs
-## (@var{nbug}), the number of tests skipped due to missing features
-## (@var{nskip}), the number of tests skipped due to run-time
-## conditions (@var{nrtskip}), and the number of regressions
-## (@var{nregression}) are returned.
+## When called with output arguments (and not in @qcode{"grabdemo"} or @qcode{"explain"}
+## mode), returns the following outputs:
+##   @code{success} - True if all tests passed, false otherwise
+##   @code{__rslt__} - An object holding results data. The format of this object
+##                     is undocumented and subject to change at any time.
 ##
 ## Example
 ##
@@ -122,7 +118,7 @@
 ## Shared variables are eval'ed into the current workspace and therefore might
 ## collide with the names used in the test.m function itself.
 
-function __rslt = test (__name, __flag = "normal", __fid = [])
+function varargout = test (__name, __flag = "normal", __fid = [])
 
   ## Output from test is prefixed by a "key" to quickly understand the issue.
   persistent __signal_fail  = "!!!!! ";
@@ -131,12 +127,13 @@ function __rslt = test (__name, __flag = "normal", __fid = [])
   persistent __signal_file  = ">>>>> ";
   persistent __signal_skip  = "----- ";
 
+  ## Parse inputs
   if (nargin < 1 || nargin > 3)
     print_usage ();
   elseif (! isempty (__name) && ! ischar (__name))
     error ("test: NAME must be a string");
   elseif (! ischar (__flag))
-    error ("test: second argument must be a string");
+    error ("test: FLAG must be a string");
   elseif (isempty (__name) && (nargin != 3 || ! strcmp (__flag, "explain")))
     print_usage ();
   endif
@@ -144,19 +141,18 @@ function __rslt = test (__name, __flag = "normal", __fid = [])
   ## Decide if error messages should be collected.
   __logfile = ! isempty (__fid);
   __batch = __logfile || nargout > 0;
-  __close_fid = false;
+  __cleanup = struct;
   if (__logfile)
     if (ischar (__fid))
-      __fname = __fid;
-      __fid = fopen (__fname, "wt");
+      __log_fname = __fid;
+      [__fid, __msg] = fopen (__log_fname, "wt");
       if (__fid < 0)
-        error ("test: could not open log file %s", __fname);
+        error ("test: could not open log file %s: %s", __log_fname, __msg);
       endif
-      __close_fid = true;
+      __cleanup.logfile = onCleanup (@() fclose(__fid));
     endif
     if (! strcmp (__flag, "explain"))
-      fprintf (__fid, "%sprocessing %s\n", __signal_file, __name);
-      fflush (__fid);
+      emit (__fid, "%sprocessing %s\n", __signal_file, __name);
     endif
   else
     __fid = stdout;
@@ -187,70 +183,32 @@ function __rslt = test (__name, __flag = "normal", __fid = [])
     __demo_code = "";
     __demo_idx = [];
   elseif (strcmp (__flag, "explain"))
-    fprintf (__fid, "# %s new test file\n", __signal_file);
-    fprintf (__fid, "# %s no tests in file\n", __signal_empty);
-    fprintf (__fid, "# %s test had an unexpected result\n", __signal_fail);
-    fprintf (__fid, "# %s test was skipped\n", __signal_skip);
-    fprintf (__fid, "# %s code for the test\n\n", __signal_block);
-    fprintf (__fid, "# Search for the unexpected results in the file\n");
-    fprintf (__fid, "# then page back to find the filename which caused it.\n");
-    fprintf (__fid, "# The result may be an unexpected failure (in which\n");
-    fprintf (__fid, "# case an error will be reported) or an unexpected\n");
-    fprintf (__fid, "# success (in which case no error will be reported).\n");
-    fflush (__fid);
-    if (__close_fid)
-      fclose (__fid);
-    endif
+    emit (__fid, "# %s new test file\n", __signal_file);
+    emit (__fid, "# %s no tests in file\n", __signal_empty);
+    emit (__fid, "# %s test had an unexpected result\n", __signal_fail);
+    emit (__fid, "# %s test was skipped\n", __signal_skip);
+    emit (__fid, "# %s code for the test\n\n", __signal_block);
+    emit (__fid, "# Search for the unexpected results in the file\n");
+    emit (__fid, "# then page back to find the filename which caused it.\n");
+    emit (__fid, "# The result may be an unexpected failure (in which\n");
+    emit (__fid, "# case an error will be reported) or an unexpected\n");
+    emit (__fid, "# success (in which case no error will be reported).\n");
     return;
   else
     error ("test: unknown flag '%s'", __flag);
   endif
 
   ## Locate the file to test.
-  __file = file_in_loadpath (__name, "all");
-  if (isempty (__file))
-    __file = file_in_loadpath ([__name ".m"], "all");
-  endif
-  if (isempty (__file))
-    __file = file_in_loadpath ([__name ".cc"], "all");
-  endif
-  if (iscell (__file))
-    if (isempty (__file))
-      __file = "";
-    else
-      __file = __file{1};  # If repeats, return first in path.
-    endif
-  endif
-  if (isempty (__file))
+  __file = locate_test_file (__name, ! __grabdemo, __fid);
+  if isempty (__file)
     if (__grabdemo)
-      __n = "";
-      __nmax = -1;
+      varargout = {"", -1};
+    elseif (nargout ==1)
+      varargout = {false};
     else
-      ftype = exist (__name);
-      if (ftype == 3)
-        fprintf (__fid, "%s%s source code with tests for dynamically linked function not found\n", __signal_empty, __name);
-      elseif (ftype == 5)
-        fprintf (__fid, "%s%s is a built-in function\n", __signal_empty, __name);
-      elseif (any (strcmp (__operators__ (), __name)))
-        fprintf (__fid, "%s%s is an operator\n", __signal_empty, __name);
-      elseif (any (strcmp (__keywords__ (), __name)))
-        fprintf (__fid, "%s%s is a keyword\n", __signal_empty, __name);
-      else
-        fprintf (__fid, "%s%s does not exist in path\n", __signal_empty, __name);
-      endif
-      fflush (__fid);
-      if (nargout > 0)
-        if (nargout == 1)
-          __n = false;
-        else
-          __n = __nmax = 0;
-        endif
-      endif
+      varargout = {0, 0};
     endif
-    if (__close_fid)
-      fclose (__fid);
-    endif
-    return;
+    return
   endif
 
   ## Grab the test code from the file.
@@ -258,30 +216,21 @@ function __rslt = test (__name, __flag = "normal", __fid = [])
 
   if (isempty (__body))
     if (__grabdemo)
-      __n = "";
-      __nmax = [];
+      varargout = {"", []};
     else
-      fprintf (__fid, "%s%s has no tests available\n", __signal_empty, __file);
-      fflush (__fid);
+      emit (__fid, "%s%s has no tests available\n", __signal_empty, __file);
       if (nargout > 0)
-        if (nargout == 1)
-          __n = false;
-        else
-          __n = __nmax = 0;
-        endif
+        varargout = {0, 0};
       endif
     endif
-    if (__close_fid)
-      fclose (__fid);
-    endif
     return;
+  end
+  
+  ## Add a dummy comment block to the end for ease of indexing.
+  if (__body(end) == "\n")
+    __body = ["\n" __body "#"];
   else
-    ## Add a dummy comment block to the end for ease of indexing.
-    if (__body(end) == "\n")
-      __body = ["\n" __body "#"];
-    else
-      __body = ["\n" __body "\n#"];
-    endif
+    __body = ["\n" __body "\n#"];
   endif
 
   ## Chop it up into blocks for evaluation.
@@ -314,7 +263,7 @@ function __rslt = test (__name, __flag = "normal", __fid = [])
   __shared = " ";
   __shared_r = " ";
   __clearfcn = "";
-  for __i = 1:numel (__blockidx)-1
+  for __i = 1:numel (__blockidx) - 1
 
     ## FIXME: Should other global settings be similarly saved and restored?
     orig_wstate = warning ();
@@ -325,8 +274,7 @@ function __rslt = test (__name, __flag = "normal", __fid = [])
 
       ## Print the code block before execution if in verbose mode.
       if (__verbose > 0)
-        fprintf (__fid, "%s%s\n", __signal_block, __block);
-        fflush (__fid);
+        emit (__fid, "%s%s\n", __signal_block, __block);
       endif
 
       ## Split __block into __type and __code.
@@ -701,33 +649,21 @@ function __rslt = test (__name, __flag = "normal", __fid = [])
       if (! isempty (__msg) && (__verbose >= 0 || __logfile))
         ## Make sure the user knows what caused the error.
         if (__verbose < 1)
-          fprintf (__fid, "%s%s\n", __signal_block, __block);
-          fflush (__fid);
+          emit (__fid, "%s%s\n", __signal_block, __block);
         endif
-        fprintf (__fid, "%s\n", __msg);
+        emit (__fid, "%s\n", __msg);
         ## Show the variable context.
-        if (! strcmp (__type, "error")
-            && ! strcmp (__type, "testif")
-            && ! strcmp (__type, "xtest")
-            && ! all (__shared == " "))
-          fputs (__fid, "shared variables ");
-          eval (sprintf ("fdisp(__fid,var2struct(%s));", __shared));
+        if ((! ismember(__type, {"error", "testif", "xtest"})) && ! all (__shared == " "))
+          emit (__fid, "shared variables ");
+          eval (sprintf ("fdisp(__fid,vars2struct(%s));", __shared));
         endif
-        fflush (__fid);
       endif
       if (! __success && ! __isxtest)
         __all_success = false;
         ## Stop after 1 error if not in batch mode or only pass/fail requested.
         if (! __batch || nargout == 1)
           if (nargout > 0)
-            if (nargout == 1)
-              __n = false;
-            else
-              __n = __nmax = 0;
-            endif
-          endif
-          if (__close_fid)
-            fclose (__fid);
+            varargout = {0, 0};
           endif
           return;
         endif
@@ -796,11 +732,8 @@ function __rslt = test (__name, __flag = "normal", __fid = [])
       printf ("%s%s has no tests available\n", __signal_empty, __file);
     endif
   elseif (__grabdemo)
-    __n    = __demo_code;
-    __nmax = __demo_idx;
-  elseif (nargout == 1)
-    __n = __all_success;
-  else
+    varargout = {__demo_code, __demo_idx};
+  elseif (nargout > 0)
     __n = __successes;
     __nmax = __tests;
     __nxfail = __xfail;
@@ -811,18 +744,79 @@ function __rslt = test (__name, __flag = "normal", __fid = [])
     __rslt = octave.test.internal.BistRunResult(__n, __nmax, __nxfail, __nbug, ...
       __nskip, __nrtskip, __nregression);
     __rslt.files_with_tests{end+1} = __file;
-    if (__rslt.n_really_fail > 0)
+    if (__rslt.n_really_fail > 2)
       __rslt.failed_files{end+1} = __file;
+    endif
+    if nargout > 2
+      varargout = {__n, __nmax, __nxfail, __nbug, __nskip, __nrtskip, __nregression};
+    else
+      varargout = {__n, __rslt};
     endif
   endif
 
 endfunction
 
+function emit (fid, format, varargin)
+  fprintf (fid, format, varargin{:});
+  fflush (fid);
+endfunction
 
-## Create structure with fieldnames the name of the input variables.
-function s = var2struct (varargin)
+## Locate the file to run tests on
+function file = locate_test_file (name, verbose, fid)
+  % Locates file to run tests on for a name.
+  % If not found, emits a diagnostic message about tests-not-found.
+  %
+  % ins:
+  %   name - file to search for, loosely defined
+  %   verbose - whether to print diagnostic messages to fid when file is not found.
+  %   fid - file id to write progress messages to
+  % outs:
+  %   file - full path to located file, including extension (charvec). Empty
+  %     if file was not found.
+  %   n
+  %   nmax
+  
+  file = file_in_loadpath (name, "all");
+  if (isempty (file))
+    file = file_in_loadpath ([name ".m"], "all");
+  endif
+  if (isempty (file))
+    file = file_in_loadpath ([name ".cc"], "all");
+  endif
+  if (iscell (file))
+    if (isempty (file))
+      file = "";
+    else
+      file = file{1};  # If there are duplicates, return first in path. 
+    endif
+  endif
+  if (isempty (file))
+    if (verbose)
+      signal_empty = "????? ";
+      ftype = exist (name);
+      if (ftype == 3)
+        fprintf (fid, "%s%s source code with tests for dynamically linked function not found\n", ...
+          signal_empty, name);
+      elseif (ftype == 5)
+        fprintf (fid, "%s%s is a built-in function\n", ...
+          signal_empty, name);
+      elseif (any (strcmp (__operators__ (), name)))
+        fprintf (fid, "%s%s is an operator\n", ...
+          signal_empty, name);
+      else
+        fprintf (fid, "%s%s does not exist in path\n", ...
+          signal_empty, name);
+      endif
+      fflush (fid);
+    endif
+    file = [];
+  endif
+endfunction
+
+## Create struct with fieldnames the name of the input variables.
+function s = vars2struct (varargin)
   for i = 1:nargin
-    s.(inputname (i, true)) = varargin{i};
+    s.(inputname (i)) = varargin{i};
   endfor
 endfunction
 
@@ -909,8 +903,9 @@ function str = trimleft (str)
   str = str(idx:end);
 endfunction
 
-function body = __extract_test_code (nm)
-  fid = fopen (nm, "rt");
+## Get test code from a given file
+function body = __extract_test_code (file)
+  fid = fopen (file, "rt");
   body = "";
   if (fid >= 0)
     while (ischar (ln = fgets (fid)))

@@ -24,11 +24,6 @@ classdef BistRunResult
     n_test = 0
     % Count of tests that ran and passed
     n_pass = 0
-    % Count of tests that failed for any reason
-    n_fail = 0
-    % Count of failures that were not xfails, skips, or regressions
-    % n_really_fail = n_fail - n_skip - n_xfail - n_xfail_bug - n_regression
-    n_really_fail = 0
     % Count of failures that were regressions
     n_regression = 0
     % Count of failures that were expected failures due to known, reported bugs
@@ -47,6 +42,13 @@ classdef BistRunResult
     failed_files = {}
   endproperties
   
+  properties (Dependent = true)
+    % Count of tests that failed for any reason
+    n_fail = 0
+    % Count of failures that were not xfails, skips, or regressions
+    % n_really_fail = n_fail - n_skip - n_xfail - n_xfail_bug - n_regression
+    n_really_fail = 0    
+  end
   
   methods
     function this = BistRunResult(varargin)
@@ -75,8 +77,14 @@ classdef BistRunResult
       this.n_skip_runtime = nrtsk;
       this.n_regression = nrgrs;
       this.failed_files = failed_files(:)';
-      this.n_fail = n - np;
-      this.n_really_fail = this.n_fail - nxf - nxb - nrgrs;
+    endfunction
+
+    function out = get.n_fail (this)
+      out = this.n_test - this.n_pass;
+    endfunction
+    
+    function out = get.n_really_fail (this)
+      out = this.n_fail - this.n_xfail - this.n_xfail_bug - this.n_regression;
     endfunction
     
     function out = plus(A, B)
@@ -93,8 +101,6 @@ classdef BistRunResult
       out = A;
       out.n_test = A.n_test + B.n_test;
       out.n_pass = A.n_pass + B.n_pass;
-      out.n_fail = A.n_fail + B.n_fail;
-      out.n_really_fail = A.n_really_fail + B.n_really_fail;
       out.n_regression = A.n_regression + B.n_regression;
       out.n_xfail_bug = A.n_xfail_bug + B.n_xfail_bug;
       out.n_xfail = A.n_xfail + B.n_xfail;
