@@ -71,6 +71,9 @@ function nfailed = __test_pkgs__ (pkg_names, options)
     pkg_names = list_installed_packages ();
   endif
   pkg_names = cellstr (pkg_names);
+  # Kludge: Don't test Testify, because we need it to stay loaded while running
+  # the tests.
+  pkg_names = setdiff (pkg_names, {'testify'});
 
   nfailed = 0;
 

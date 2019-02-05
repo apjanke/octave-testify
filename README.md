@@ -1,7 +1,7 @@
 Testify – New test/BIST functions for GNU Octave
 ================================================
 
-This is a collection of new BIST (Built-In Self-Test) related functions for Octave.
+This is a collection of new and enhanced BIST (Built-In Self-Test) related functions for Octave.
 
 These override and replace some of Octave's current test functions.
 This is intentional - this package started out as just a patch to Octave's `__run_test_suite__`.
@@ -21,15 +21,26 @@ Functions in this package shadow Octave-provided functions. This is intentional.
 Testify does _not_ implement [Matlab's unit test framework](https://www.mathworks.com/help/matlab/matlab-unit-test-framework.html), or attempt to be compatible with it.
 This is just a “richer” way of doing Octave's current BIST tests, using its existing data model.
 
-## Installation and Use
+## Installation and usage
 
-Do not install this using `pkg`!
-Because Testify's functions load and unload packages as part of the testing protocol, it won't work to have Testify installed as a package itself.
+### Quick start
 
-Instead, just download Testify somewhere and then add its `inst/` directory to your Octave path using `addpath()`.
-It needs to go at the front of your path, because it shadows Octave's own test functions.
-(You don't need to do anything special - by default, `addpath()` puts the new paths at the front.
-Just don't use the the `-end` or `1` options to it.)
+To get started using or testing this project, install it using Octave's `pkg` function:
+
+```
+pkg install https://github.com/apjanke/octave-testify/releases/download/v0.1.0/testify-0.1.0.tar.gz
+pkg load testify
+```
+
+### Installation for development
+
+* Clone the repo.
+  * `git clone https://github.com/apjanke/octave-testify`
+* Run `make dist` in a shell.
+* Install the resulting `target/testify-X.Y.Z.tar.gz` package file by running `pkg install /path/to/repo/octave-testify/target/testify-X.Y.Z.tar.gz` in Octave.
+* Lather, rinse, and repeat each time you make changes to any of the source code.
+
+### Usage
 
 Then, call one of Testify's functions:
 
