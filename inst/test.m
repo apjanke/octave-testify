@@ -133,7 +133,7 @@ function varargout = test (__name, __flag = "normal", __fid = [])
   elseif (! isempty (__name) && ! ischar (__name))
     error ("test: NAME must be a string");
   elseif (! ischar (__flag))
-    error ("test: FLAG must be a string");
+    error ("test: second argument must be a string");
   elseif (isempty (__name) && (nargin != 3 || ! strcmp (__flag, "explain")))
     print_usage ();
   endif
@@ -763,18 +763,16 @@ endfunction
 
 ## Locate the file to run tests on
 function file = locate_test_file (name, verbose, fid)
-  % Locates file to run tests on for a name.
-  % If not found, emits a diagnostic message about tests-not-found.
-  %
-  % ins:
-  %   name - file to search for, loosely defined
-  %   verbose - whether to print diagnostic messages to fid when file is not found.
-  %   fid - file id to write progress messages to
-  % outs:
-  %   file - full path to located file, including extension (charvec). Empty
-  %     if file was not found.
-  %   n
-  %   nmax
+  # Locates file to run tests on for a name.
+  # If not found, emits a diagnostic message about tests-not-found.
+  #
+  # inputs:
+  #   name - file to search for, loosely defined
+  #   verbose - whether to print diagnostic messages to fid when file is not found.
+  #   fid - file id to write progress messages to
+  # outputs:
+  #   file - full path to located file, including extension (charvec). Empty
+  #     if file was not found.
   
   file = file_in_loadpath (name, "all");
   if (isempty (file))
@@ -782,6 +780,21 @@ function file = locate_test_file (name, verbose, fid)
   endif
   if (isempty (file))
     file = file_in_loadpath ([name ".cc"], "all");
+  endif
+  if (isempty (file))
+    testsdir = __octave_config_info__ ("octtestsdir");
+    candidates = {
+      fullfile(testsdir, name)
+      fullfile(testsdir, [name "-tst"])
+      fullfile(testsdir, [name ".cc-tst"])
+      fullfile(testsdir, [name ".in.yy-tst"])
+    };
+    for i = 1:numel (candidates)
+      if exist (candidates{i}, "file")
+        file = candidates{i};
+        break
+      endif
+    endfor
   endif
   if (iscell (file))
     if (isempty (file))
