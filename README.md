@@ -55,15 +55,15 @@ It's all in the root namespace, expected to shadow existing core Octave code.
 #### Externally Visible
 
 <dl>
-<dt>`__run_test_suite__`</dt>
-<dd>A replacement for Octave's current `__run_test_suite__`.
-Nothing much new here; just internal changes to support the `TestSuiteResults` abstraction.</dd>
+<dt><code>__run_test_suite__</code></dt>
+<dd>A replacement for Octave's current <code>__run_test_suite__</code>.
+Nothing much new here; just internal changes to support the <code>BistRunResult</code> abstraction.</dd>
 </dl>
 
 #### Internal Changes
 
 <dl>
-<dt>TestSuiteResults</dt>
+<dt><code>BistRunResult</code></dt>
 <dd>An object that collects the various counters and lists associated with BIST run results.
 This is a replacement for the current technique of managing a half dozen primitive variables in parallel.
 </dd>
