@@ -43,4 +43,4 @@ Make sure to check them out before diving in to this code.
 
 ## Other packages
 
-The [Debian `dh-octave`](https://packages.debian.org/sid/dh-octave) package has its own method for running all tests in a source package at build time and in a CI environment.
+The [Debian `dh-octave`](https://packages.debian.org/sid/dh-octave) package (for “debhelper-octave”) has its own method for running all tests in a source package at build time and in a CI environment.
