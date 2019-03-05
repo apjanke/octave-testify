@@ -3,11 +3,11 @@ Testify – New test/BIST functions for GNU Octave
 
 This is a collection of new and enhanced BIST (Built-In Self-Test) related functions for Octave.
 
-These override and replace some of Octave's current test functions.
-This is intentional - this package started out as just a patch to Octave's `__run_test_suite__`.
-The goal here is to prototype something that might be a step forward for Octave's current testing functionality.
+These override and replace some of Octave’s current test functions.
+This is intentional - this package started out as just a patch to Octave’s `__run_test_suite__`.
+The goal here is to prototype something that might be a step forward for Octave’s current testing functionality.
 
-The goals of Testify's new test functions are:
+The goals of Testify’s new test functions are:
 * Richer abstractions for representing test results
 * Nicer output format
   * Including summary results that make it easier to copy-paste meaningful test failure reports to the octave-maintainers list
@@ -21,13 +21,14 @@ Functions in this package shadow Octave-provided functions. This is intentional.
 Testify does _not_ implement [Matlab's unit test framework](https://www.mathworks.com/help/matlab/matlab-unit-test-framework.html), or attempt to be compatible with it.
 This is just a “richer” way of doing Octave's current BIST tests, using its existing data model.
 
-If you _are_ interested in seeing a clone of xUnit or Matlab's unit test framework, go [add a comment on Issue #5](https://github.com/apjanke/octave-testify/issues/5) to indicate your interest. If enough people want it, I’ll try to make it happen.
+If you _are_ interested in seeing a clone of xUnit or Matlab’s unit test framework, go [add a comment on Issue #5](https://github.com/apjanke/octave-testify/issues/5) to indicate your interest.
+If enough people want it, I’ll try to make it happen.
 
 ## Installation and usage
 
 ### Quick start
 
-To get started using or testing this project, install it using Octave's `pkg` function:
+To get started using or testing this project, install it using Octave’s `pkg` function:
 
 ```
 pkg install https://github.com/apjanke/octave-testify/releases/download/v0.1.0/testify-0.1.0.tar.gz
@@ -44,7 +45,7 @@ pkg load testify
 
 ### Usage
 
-Then, call one of Testify's functions:
+Then, call one of Testify’s functions:
 
 * `__run_test_suite__` - just like Octave's regular `__run_test_suite__`, but with (IMHO) nicer output.
 * `__test_pkgs__` – a new function for running tests on installed `pkg` packages.
@@ -58,7 +59,7 @@ It's all in the root namespace, expected to shadow existing core Octave code.
 
 <dl>
 <dt><code>__run_test_suite__</code></dt>
-<dd>A replacement for Octave's current <code>__run_test_suite__</code>.
+<dd>A replacement for Octave’s current <code>__run_test_suite__</code>.
 Nothing much new here; just internal changes to support the <code>BistRunResult</code> abstraction.</dd>
 <dt><code>__test_pkgs__</code></dt>
 <dd>A function for running tests on a `pkg` package of Octave code.</dd>
