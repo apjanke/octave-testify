@@ -21,6 +21,8 @@ Functions in this package shadow Octave-provided functions. This is intentional.
 Testify does _not_ implement [Matlab's unit test framework](https://www.mathworks.com/help/matlab/matlab-unit-test-framework.html), or attempt to be compatible with it.
 This is just a “richer” way of doing Octave's current BIST tests, using its existing data model.
 
+If you _are_ interested in seeing a clone of xUnit or Matlab's unit test framework, go [add a comment on Issue #5](https://github.com/apjanke/octave-testify/issues/5) to indicate your interest. If enough people want it, I’ll try to make it happen.
+
 ## Installation and usage
 
 ### Quick start
