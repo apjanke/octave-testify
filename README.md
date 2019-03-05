@@ -16,6 +16,8 @@ The goals of Testify’s new test functions are:
 
 Functions in this package shadow Octave-provided functions. This is intentional.
 
+See files in the `doc-project` directory for more documentation.
+
 ### Non-Goals
 
 Testify does _not_ implement [Matlab's unit test framework](https://www.mathworks.com/help/matlab/matlab-unit-test-framework.html), or attempt to be compatible with it.
