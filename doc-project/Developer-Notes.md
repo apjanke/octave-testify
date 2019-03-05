@@ -8,6 +8,8 @@ Testify Developer Notes
 There's been a lot of discussion about test enhancements on the Savannah issue tracker and the [Octave Maintainers mailing list](http://lists.gnu.org/archive/html/octave-maintainers/).
 Make sure to check them out before diving in to this code.
 
+###  Savannah issues
+
 * [bug #41298: pkg install: automatically extract %!tests and install both extracted and fixed test files](https://savannah.gnu.org/bugs/?41298)
 * [bug #41215: Request for a "pkg test" feature](https://savannah.gnu.org/bugs/?41215)
 * [bug #55522: Add failure summary to \__run_test_suite__ output?](https://savannah.gnu.org/bugs/index.php?55522)
@@ -22,3 +24,23 @@ Make sure to check them out before diving in to this code.
 * [bug #54173: Intermittent hang in test suite when run from Qt GUI on macOS](https://savannah.gnu.org/bugs/index.php?54173)
 * [bug #53875: Test suite fails with non-ASCII characters if system code page is not UTF-8](https://savannah.gnu.org/bugs/index.php?53875)
 * [https://savannah.gnu.org/bugs/index.php?54561](https://savannah.gnu.org/bugs/index.php?54561)
+
+###  Mailing list threads
+
+* [Hardening BIST tests – 2/8/2019](http://lists.gnu.org/archive/html/octave-maintainers/2019-02/msg00095.html)
+* [Figures popping up during running of test suite? – 8/2/2018](http://lists.gnu.org/archive/html/octave-maintainers/2018-08/msg00010.html)
+* [run BISTs for all installed packages – 1/21/2019](http://lists.gnu.org/archive/html/octave-maintainers/2019-01/msg00209.html)
+* [Removing XFAILs from test suite summary – 4/11/2018](http://lists.gnu.org/archive/html/octave-maintainers/2018-04/msg00111.html)
+* [Test suite regressions vs expected failures – 8/16/2017](http://lists.gnu.org/archive/html/octave-maintainers/2017-08/msg00111.html)
+* [Marking bugs as fixed in the test suite – 7/7/2017](https://lists.gnu.org/archive/html/octave-maintainers/2017-07/msg00040.html)
+* [Initialization files for test suite – 2/8/2019](http://lists.gnu.org/archive/html/octave-maintainers/2019-02/msg00093.html)
+* [Re: --norc option and test suite – 2/7/2019](http://lists.gnu.org/archive/html/octave-maintainers/2019-02/msg00073.html)
+* [BuildBots no longer run make check? – 6/1/2018](http://lists.gnu.org/archive/html/octave-maintainers/2018-06/msg00006.html)
+* [Improving BISTs that are known to fail with LLVM libc++ – 4/14/2018](http://lists.gnu.org/archive/html/octave-maintainers/2018-04/msg00152.html)
+* [xtest vs test – 7/2/2016](http://lists.gnu.org/archive/html/octave-maintainers/2016-07/msg00023.html)
+* [test suites for packages – 10/15/2014](http://lists.gnu.org/archive/html/octave-maintainers/2014-10/msg00068.html)
+* [Matlab compatibility of assert (was: Re: assert () taking long time) – 9/24/2013](http://lists.gnu.org/archive/html/octave-maintainers/2013-09/msg00299.html)
+
+## Other packages
+
+The [Debian `dh-octave`](https://packages.debian.org/sid/dh-octave) package has its own method for running all tests in a source package at build time and in a CI environment.
