@@ -44,3 +44,7 @@ Make sure to check them out before diving in to this code.
 ## Other packages
 
 The [Debian `dh-octave`](https://packages.debian.org/sid/dh-octave) package (for “debhelper-octave”) has its own method for running all tests in a source package at build time and in a CI environment.
+
+There's an [`octave-doctest` project](https://github.com/catch22/octave-doctest) for embedding tests/demos in Matlab-style helptext.
+
+Mike Miller is working on [`octave-test-suite` on GitLab](https://gitlab.com/mtmiller/octave-test-suite) which is focused on testing the interaction between the `octave` command and the external system.
