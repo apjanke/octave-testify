@@ -41,8 +41,7 @@ pkg load testify
 
 * Clone the repo.
   * `git clone https://github.com/apjanke/octave-testify`
-* Run `make dist` in a shell.
-* Install the resulting `target/testify-X.Y.Z.tar.gz` package file by running `pkg install /path/to/repo/octave-testify/target/testify-X.Y.Z.tar.gz` in Octave.
+* Run `make install` in a shell.
 * Lather, rinse, and repeat each time you make changes to any of the source code.
 
 ### Usage
