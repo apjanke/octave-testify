@@ -84,10 +84,9 @@ classdef ForgePkgTester
           this.pkgtool.uninstall_all_pkgs_except ('testify');
           flush_diary
         endfor
-        this.tested_pkgs = pkgs_to_test;
+      unwind_protect_cleanup
         this.test_elapsed_time = toc (t0);
         this.display_results;
-      unwind_protect_cleanup
         diary off
         % Display log file again at end so it's easy to find when test run finishes
         fprintf ('Log file: %s\n', log_file);
@@ -120,15 +119,20 @@ classdef ForgePkgTester
           this.error_pkgs{end+1} = pkg_name;
         end_try_catch
       unwind_protect_cleanup
-        file_droppings = this.find_file_droppings;
-        if ! isempty (file_droppings)
-          fprintf ('\n');
-          fprintf ('File droppings were left by %s:\n', pkg_name);
-          for i = 1:numel (file_droppings)
-            fprintf ('  %s\n', file_droppings{i});
-          endfor
-          fprintf ('\n');
-        endif
+        this.tested_pkgs{end+1} = pkg_name;
+        try
+          file_droppings = this.find_file_droppings;
+          if ! isempty (file_droppings)
+            fprintf ('\n');
+            fprintf ('File droppings were left by %s:\n', pkg_name);
+            for i = 1:numel (file_droppings)
+              fprintf ('  %s\n', file_droppings{i});
+            endfor
+            fprintf ('\n');
+          endif
+        catch err
+          fprintf ('Error while detecting file droppings: %s\n', err.message);
+        end_try_catch
         cd (orig_pwd);
         rm_rf (this.tmp_run_dir);
       end_unwind_protect
@@ -229,7 +233,7 @@ classdef ForgePkgTester
       fprintf ('\n');
       fprintf ('Tested %d packages in %.1f s\n', ...
         numel (this.tested_pkgs), this.test_elapsed_time);
-      fprintf ('Packages tested: %s\n', strjoin(this.pkgs_to_test, ' '));
+      fprintf ('Packages tested: %s\n', strjoin(this.tested_pkgs, ' '));
       fprintf ('\n');
       if ! isempty (this.skipped_pkgs_install)
         fprintf ('Skipped known-bad packages:\n');
