@@ -66,6 +66,8 @@ classdef ForgePkgTester
       unwind_protect
         say ('Testing %s Forge packages', qualifier);
         pkgs_to_test = this.pkgs_to_test;
+        % Sort for consistency
+        pkgs_to_test = sort (pkgs_to_test);
         say ('Testing packages: %s', strjoin(pkgs_to_test, ' '));
         fprintf('\n');
         for i_pkg = 1:numel (pkgs_to_test)
