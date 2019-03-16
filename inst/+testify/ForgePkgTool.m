@@ -81,6 +81,13 @@ classdef ForgePkgTool
     function out = current_version_for_pkg (this, pkg_name)
       [out, url] = this.get_forge_pkg (pkg_name);
     endfunction
+    
+    function out = order_deps (this, pkgs)
+      %ORDER_DEPS Calculate an in-dependency-order ordering for package installs
+      install_order = {};
+      other_deps = {};
+      error ('order_deps is not yet implemented.');
+    endfunction
   endmethods
 
   methods  
