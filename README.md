@@ -68,6 +68,8 @@ Nothing much new here; just internal changes to support the <code>BistRunResult<
 <dt><code>__run_tests_and_exit__</code></dt>
 <dd>A function for running tests and using <code>octave</code>’s exit status to indicate success or failure.
 For use in Continuous Integration or automated testing environments.</dd>
+<dt><code>testify.install_and_test_all_forge_pkgs</code></dt>
+<dd>A function for testing the installation and internal package tests/BISTs of Octave Forge packages.</dd>
 </dl>
 
 #### Internal Changes
