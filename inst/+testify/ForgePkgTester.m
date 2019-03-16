@@ -15,8 +15,11 @@ classdef ForgePkgTester
     tmp_dir
     % Overrides the list of packages to test
     pkgs_to_test = {};
-    % Packages that fail bad enough in install to crash octave
-    known_bad_pkgs_install = {};
+    % Packages that fail bad enough in install to crash octave or junk up the tests
+    known_bad_pkgs_install = {
+      % Messes up the path somehow so the log is spammed with "load-path" warnings
+      "fuzzy-logic-toolkit"
+    };
     % Packages that fail bad enough in tests to crash octave
     known_bad_pkgs_test = {};
     skipped_pkgs_install = {};
