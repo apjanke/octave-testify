@@ -3,6 +3,13 @@ classdef ForgePkgTester
   %
   % This is a single-use object: create it and run one set of tests on it. If 
   % you want to run another test cycle, create a new object.
+  
+  properties (Constant)
+    known_bad_pkgs_test_mac = {'control', 'octproj', 'quaternion'};
+    known_bad_pkgs_test_windows = {};
+    known_bad_pkgs_test_linux = {};
+  endproperties
+
   properties
     pkgtool
     tmp_dir
@@ -11,7 +18,7 @@ classdef ForgePkgTester
     % Packages that fail bad enough in install to crash octave
     known_bad_pkgs_install = {};
     % Packages that fail bad enough in tests to crash octave
-    known_bad_pkgs_test = {'control', 'octproj', 'quaternion'};
+    known_bad_pkgs_test = {};
     skipped_pkgs_install = {};
     skipped_pkgs_test = {};
     tested_pkgs = {};
@@ -23,6 +30,13 @@ classdef ForgePkgTester
   
   methods
     function this = ForgePkgTester
+      if ispc
+        this.known_bad_pkgs_test = testify.ForgePkgTester.known_bad_pkgs_test_windows;
+      elseif ismac
+        this.known_bad_pkgs_test = testify.ForgePkgTester.known_bad_pkgs_test_mac;
+      else        
+        this.known_bad_pkgs_test = testify.ForgePkgTester.known_bad_pkgs_test_linux;
+      endif
       timestamp = datestr(now, 'yyyy-mm-dd_HH-MM-SS');
       tmp_dir_name = ['octave-testify-ForgePkgTester-' timestamp];
       tmp_dir_parent = 'octave-testify-ForgePkgTester';
