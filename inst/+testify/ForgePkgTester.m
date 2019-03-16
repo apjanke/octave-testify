@@ -143,6 +143,12 @@ classdef ForgePkgTester
       env_var_displayer = testify.EnvVarDisplayer;
       env_var_displayer.display_redacted_env_vars;
       fprintf ('\n');
+      if isunix
+        [status, lc_info] = system ('locale');
+        fprintf ('Locale:\n');
+        fprintf ('%s', lc_info);
+        fprintf ('\n');
+      endif
     endfunction
 
     function display_results (this)
