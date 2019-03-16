@@ -78,3 +78,11 @@ For use in Continuous Integration or automated testing environments.</dd>
 This is a replacement for the current technique of managing a half dozen primitive variables in parallel.
 </dd>
 </dl>
+
+## Authors
+
+Testify is written and maintained by [Andrew Janke](https://github.com/apjanke).
+
+## Acknowledgments
+
+Thanks to [Polkadot Stingray](https://www.youtube.com/watch?v=3ad4NsEy1tg), [BAND-MAID](https://bandmaid.tokyo/), and [Brian Eno](https://en.wikipedia.org/wiki/Ambient_1:_Music_for_Airports) for powering my coding.
