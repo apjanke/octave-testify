@@ -40,11 +40,11 @@ classdef ForgePkgTester
   methods
     function this = ForgePkgTester
       if ispc
-        this.known_bad_pkgs_test = testify.ForgePkgTester.known_bad_pkgs_test_windows;
+        this.known_bad_pkgs_test = testify.internal.ForgePkgTester.known_bad_pkgs_test_windows;
       elseif ismac
-        this.known_bad_pkgs_test = testify.ForgePkgTester.known_bad_pkgs_test_mac;
+        this.known_bad_pkgs_test = testify.internal.ForgePkgTester.known_bad_pkgs_test_mac;
       else        
-        this.known_bad_pkgs_test = testify.ForgePkgTester.known_bad_pkgs_test_linux;
+        this.known_bad_pkgs_test = testify.internal.ForgePkgTester.known_bad_pkgs_test_linux;
       endif
       timestamp = datestr(now, 'yyyy-mm-dd_HH-MM-SS');
       tmp_dir_name = ['octave-testify-ForgePkgTester-' timestamp];
@@ -54,7 +54,7 @@ classdef ForgePkgTester
       this.tmp_dir = fullfile (group_tmp_dir, tmp_dir_name);
       this.build_log_dir = fullfile (this.tmp_dir, 'build-logs');
       this.tmp_run_dir = fullfile (tempdir, [tmp_dir_name '-run']);
-      this.pkgtool = testify.ForgePkgTool;
+      this.pkgtool = testify.internal.ForgePkgTool;
     endfunction
 
     function install_and_test_all_forge_pkgs (this)
@@ -169,7 +169,7 @@ classdef ForgePkgTester
       try
         say ('Installing Forge package %s', pkg_name);
         flush_diary
-        installer = testify.ForgePkgInstaller;
+        installer = testify.internal.ForgePkgInstaller;
         t0 = tic;
         rslt = installer.install (pkg_name);
         te = toc (t0);
@@ -229,7 +229,7 @@ classdef ForgePkgTester
       endif
       fprintf ('\n');
       fprintf ('Environment Variables:\n');
-      env_var_displayer = testify.EnvVarDisplayer;
+      env_var_displayer = testify.internal.EnvVarDisplayer;
       env_var_displayer.display_redacted_env_vars;
       fprintf ('\n');
       if isunix

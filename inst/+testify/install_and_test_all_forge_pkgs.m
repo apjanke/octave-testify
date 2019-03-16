@@ -18,7 +18,7 @@
 
 function install_and_test_all_forge_pkgs (pkgs_to_test)
   if nargin < 1; pkgs_to_test = {}; endif
-  pkgtester = testify.ForgePkgTester;
+  pkgtester = testify.internal.ForgePkgTester;
   if ~isempty (pkgs_to_test)
     pkgtester.pkgs_to_test = pkgs_to_test;
   endif
