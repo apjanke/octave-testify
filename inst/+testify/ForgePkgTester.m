@@ -14,6 +14,8 @@ classdef ForgePkgTester
     pkgtool
     % Temp dir to hold output files
     tmp_dir
+    % Temp dir to run stuff in
+    tmp_run_dir
     % Overrides the list of packages to test
     pkgs_to_test = {};
     % Packages that fail bad enough in install to crash octave or junk up the tests
@@ -31,6 +33,7 @@ classdef ForgePkgTester
     test_failures = {};
     test_elapsed_time = NaN;
     error_pkgs = {};
+    file_droppings = {};
   endproperties
   
   methods
@@ -48,11 +51,12 @@ classdef ForgePkgTester
       group_tmp_dir = fullfile (tempdir, tmp_dir_parent);
       mkdir (group_tmp_dir);
       this.tmp_dir = fullfile (group_tmp_dir, tmp_dir_name);
-      mkdir (this.tmp_dir);
+      this.tmp_run_dir = fullfile (tempdir, [tmp_dir_name '-run']);
       this.pkgtool = testify.ForgePkgTool;
     endfunction
 
     function install_and_test_all_forge_pkgs (this)
+      mkdir (this.tmp_dir);
       if isempty (this.pkgs_to_test)
         qualifier = 'all';
         forge_pkgs = pkg ('-forge', 'list');
@@ -88,68 +92,102 @@ classdef ForgePkgTester
         % Display log file again at end so it's easy to find when test run finishes
         fprintf ('Log file: %s\n', log_file);
         fprintf ('\n');
-      end_unwind_protect  
+      end_unwind_protect
     endfunction
     
+    function out = find_file_droppings (this)
+      d = dir;
+      d([1 2]) = [];
+      if isempty (d)
+        out = {};
+      else
+        out = { d.name };
+      endif
+    endfunction
+
     function this = install_and_test_forge_pkg (this, pkg_name)
-      try
-        fprintf ('\n');
-        pkg_ver = this.pkgtool.current_version_for_pkg (pkg_name);
-        say ('Doing Forge package %s %s', pkg_name, pkg_ver);
-        if ismember (pkg_name, this.known_bad_pkgs_install)
-          say ('Skipping install of known-bad package %s', pkg_name);
-          this.skipped_pkgs_install{end+1} = pkg_name;
-          return
-        endif
-        deps = this.pkgtool.recursive_dependencies_for_package (pkg_name);
-        this.pkgtool.uninstall_all_pkgs_except ({'testify'});
-        if ! isempty (deps)
-          try
-            t0 = tic;
-            say ('Installing dependencies for %s: %s', pkg_name, strjoin (deps, ' '));
-            this.pkgtool.pkg ('install', '-forge', deps{:});
-            te = toc (t0);
-            say ('Package installed (dependencies): %s. Elapsed time: %.1f s', pkg_name, te);
-          catch err
-            say ('Error while installing package dependencies for %s: %s', ...
-              pkg_name, err.message);
-            this.install_dependency_failures{end+1} = pkg_name;
-            return;
-          end_try_catch
-        endif
+      if exist (this.tmp_run_dir, 'dir');
+        rm_rf (this.tmp_run_dir);
+      endif
+      mkdir (this.tmp_run_dir);
+      orig_pwd = pwd;
+      unwind_protect
+        cd (this.tmp_run_dir);
         try
-          say ('Installing Forge package %s', pkg_name);
-          flush_diary
-          t0 = tic;
-          this.pkgtool.pkg ('install', '-forge', pkg_name);
-          te = toc (t0);
-          say ('Package installed: %s. Elapsed time: %.1f s', pkg_name, te);
+          this = install_and_test_forge_pkg_unsafe (this, pkg_name);
         catch err
-          say ('Error while installing package %s: %s', ...
+          % Internal error
+          this.error_pkgs{end+1} = pkg_name;
+        end_try_catch
+      unwind_protect_cleanup
+        file_droppings = this.find_file_droppings;
+        if ! isempty (file_droppings)
+          fprintf ('\n');
+          fprintf ('File droppings were left by %s:\n', pkg_name);
+          for i = 1:numel (file_droppings)
+            fprintf ('  %s\n', file_droppings{i});
+          endfor
+          fprintf ('\n');
+        endif
+        cd (orig_pwd);
+        rm_rf (this.tmp_run_dir);
+      end_unwind_protect
+    endfunction
+  
+    function this = install_and_test_forge_pkg_unsafe (this, pkg_name)
+      fprintf ('\n');
+      pkg_ver = this.pkgtool.current_version_for_pkg (pkg_name);
+      say ('Doing Forge package %s %s', pkg_name, pkg_ver);
+      if ismember (pkg_name, this.known_bad_pkgs_install)
+        say ('Skipping install of known-bad package %s', pkg_name);
+        this.skipped_pkgs_install{end+1} = pkg_name;
+        return
+      endif
+      deps = this.pkgtool.recursive_dependencies_for_package (pkg_name);
+      this.pkgtool.uninstall_all_pkgs_except ({'testify'});
+      if ! isempty (deps)
+        try
+          t0 = tic;
+          say ('Installing dependencies for %s: %s', pkg_name, strjoin (deps, ' '));
+          this.pkgtool.pkg ('install', '-forge', deps{:});
+          te = toc (t0);
+          say ('Package installed (dependencies): %s. Elapsed time: %.1f s', pkg_name, te);
+        catch err
+          say ('Error while installing package dependencies for %s: %s', ...
             pkg_name, err.message);
-          this.install_failures{end+1} = pkg_name;
+          this.install_dependency_failures{end+1} = pkg_name;
           return;
         end_try_catch
-        if ismember (pkg_name, this.known_bad_pkgs_test)
-          say ('Skipping test of known-bad package %s', pkg_name);
-          this.skipped_pkgs_test{end+1} = pkg_name;
-          return
-        endif
-        say ('Testing Forge package %s', pkg_name);
-        try
-          nfailed = __test_pkgs__ (pkg_name);
-          if nfailed > 0
-            this.test_failures{end+1} = pkg_name;
-          endif
-        catch err
-          say ('Error while testing package %s: %s', ...
-            pkg_name, err.message);
-          this.install_failures{end+1} = pkg_name;
-          return;        
-        end_try_catch
+      endif
+      try
+        say ('Installing Forge package %s', pkg_name);
+        flush_diary
+        t0 = tic;
+        this.pkgtool.pkg ('install', '-forge', pkg_name);
+        te = toc (t0);
+        say ('Package installed: %s. Elapsed time: %.1f s', pkg_name, te);
       catch err
-        % Internal error
-        this.error_pkgs{end+1} = pkg_name;
+        say ('Error while installing package %s: %s', ...
+          pkg_name, err.message);
+        this.install_failures{end+1} = pkg_name;
+        return;
+      end_try_catch
+      if ismember (pkg_name, this.known_bad_pkgs_test)
+        say ('Skipping test of known-bad package %s', pkg_name);
+        this.skipped_pkgs_test{end+1} = pkg_name;
+        return
+      endif
+      say ('Testing Forge package %s', pkg_name);
+      try
+        nfailed = __test_pkgs__ (pkg_name);
+        if nfailed > 0
+          this.test_failures{end+1} = pkg_name;
+        endif
+      catch err
+        say ('Error while testing package %s: %s', ...
+          pkg_name, err.message);
+        this.test_failures{end+1} = pkg_name;
+        return;        
       end_try_catch
       flush_diary
     endfunction
@@ -209,21 +247,20 @@ classdef ForgePkgTester
         if ! isempty (this.install_dependency_failures)
           fprintf ('Packages with failed dependency installations:\n');
           print_pkgs_one_per_line (this.install_dependency_failures);
-          fprintf ('\n');
         endif
         if ! isempty (this.install_failures)
           fprintf ('Failed package installations:\n');
           print_pkgs_one_per_line (this.install_failures);
-          fprintf ('\n');
         endif
       endif
+      fprintf ('\n');
       if isempty (this.test_failures)
         fprintf ('All packages passed tests OK.\n');
       else
         fprintf ('Failed package tests:\n');
         print_pkgs_one_per_line (this.test_failures);
-        fprintf ('\n');
       endif
+      fprintf ('\n');
       if ! isempty (this.error_pkgs)
         fprintf ('Internal errors occurred for these packages:\n');
         print_pkgs_one_per_line (this.error_pkgs);
@@ -248,4 +285,8 @@ endfunction
 
 function out = chomp (str)
   out = regexprep (str, '\r?\n$', '');
+endfunction
+
+function rm_rf (file)
+  system (sprintf ('rm -rf "%s"', file));
 endfunction
