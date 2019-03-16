@@ -80,7 +80,12 @@ function nfailed = __test_pkgs__ (pkg_names, options)
   pkgs_with_failures = {};
 
   fprintf ("Running package tests\n");
-  fprintf ("Random seed is: %0.16f\n", opts.rand_seed);
+  if floor (opts.rand_seed) == opts.rand_seed
+    rand_seed_display = num2str (opts.rand_seed);
+  else
+    rand_seed_display = sprintf ("%0.16f", opts.rand_seed);
+  endif
+  fprintf ("Random seed is: %s\n", rand_seed_display);
 
   ## Test packages individually
   fprintf ("Testing packages individually...\n");
