@@ -64,9 +64,9 @@ It's all in the root namespace, expected to shadow existing core Octave code.
 <dd>A replacement for Octave’s current <code>__run_test_suite__</code>.
 Nothing much new here; just internal changes to support the <code>BistRunResult</code> abstraction.</dd>
 <dt><code>__test_pkgs__</code></dt>
-<dd>A function for running tests on a `pkg` package of Octave code.</dd>
+<dd>A function for running tests on a <code>pkg</code> package of Octave code.</dd>
 <dt><code>__run_tests_and_exit__</code></dt>
-<dd>A function for running tests and using `octave`’s exit status to indicate success or failure.
+<dd>A function for running tests and using <code>octave</code>’s exit status to indicate success or failure.
 For use in Continuous Integration or automated testing environments.</dd>
 </dl>
 
