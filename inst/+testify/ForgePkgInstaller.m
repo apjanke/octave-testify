@@ -147,6 +147,9 @@ function out = pkg_install (varargin)
     rslt = install_private_impl (files, deps, prefix, archprefix, verbose, local_list,
              global_list, global_install);
     out.log_dirs = rslt.log_dirs;
+    out.success = rslt.success;
+    out.error_message = rslt.error_message;
+    out.exception = rslt.exception;
   unwind_protect_cleanup
     cellfun ("unlink", local_files);
     if (exist (tmp_dir, "file"))
@@ -162,6 +165,23 @@ endfunction
 
 function out = install_private_impl (files, handle_deps, prefix, archprefix, verbose,
                   local_list, global_list, global_install)
+  % INSTALL_PRIVATE_IMPL
+  %
+  % Returns struct with fields:
+  %   success (boolean)
+  %   log_dirs (cellstr)
+  %   error_message (char)
+  %   exception (MException)
+  %
+  % log_dirs is populated and valid even if success is false.
+  %
+  % May still throw an error in some cases for lower-level or early errors.
+
+  out = struct;
+  out.success = true;
+  out.log_dirs = {};
+  out.error_message = '';
+  out.exception = [];
 
   ## Check that the directory in prefix exist.  If it doesn't: create it!
   if (! isfolder (prefix))
@@ -320,7 +340,6 @@ function out = install_private_impl (files, handle_deps, prefix, archprefix, ver
   endif
 
   ## Prepare each package for installation.
-  out.log_dirs = {};
   try
     for i = 1:length (descriptions)
       desc = descriptions{i};
@@ -328,6 +347,12 @@ function out = install_private_impl (files, handle_deps, prefix, archprefix, ver
       prepare_installation (desc, pdir);
       rslt = configure_make (desc, pdir, verbose);
       out.log_dirs{end+1} = rslt.log_dir;
+      if ! rslt.success
+        out.success = false;
+        out.error_message = rslt.error_message;
+        out.exception = rslt.exception;
+        return;
+      endif
       copy_built_files (desc, pdir, verbose);
     endfor
   catch
@@ -948,92 +973,107 @@ endfunction
 
 
 function out = configure_make (desc, packdir, verbose)
+  % Returns struct with fields:
+  %  success (boolean)
+  %  log_dir (char)
+  %  error_message (char)
+  %  exception (MException or [])
+  %
+  % log_dir will still be populated and valid even if success is false.
 
   timestamp = datestr(now, 'yyyy-mm-dd_HH-MM-SS');
   tmp_dir_name = ['octave-testify-ForgePkgInstaller-' timestamp];
   log_dir = fullfile (tempdir, tmp_dir_name);
   mkdir (log_dir);
   out.log_dir = log_dir;
+  out.success = true;
+  out.error_message = '';
+  out.exception = [];
   
-  ## Perform ./configure, make, make install in "src".
-  if (isfolder (fullfile (packdir, "src")))
-    src = fullfile (packdir, "src");
-    octave_bindir = __octave_config_info__ ("bindir");
-    ver = version ();
-    ext = __octave_config_info__ ("EXEEXT");
-    mkoctfile_program = fullfile (octave_bindir, ...
-                                  sprintf ("mkoctfile-%s%s", ver, ext));
-    octave_config_program = fullfile (octave_bindir, ...
-                                      sprintf ("octave-config-%s%s", ver, ext));
-    if (ispc () && ! isunix ())
-      octave_binary = fullfile (octave_bindir, sprintf ("octave-%s.bat", ver));
-    else
-      octave_binary = fullfile (octave_bindir, sprintf ("octave-%s%s", ver, ext));
-    endif
-
-    if (! exist (mkoctfile_program, "file"))
-      __gripe_missing_component__ ("pkg", "mkoctfile");
-    endif
-    if (! exist (octave_config_program, "file"))
-      __gripe_missing_component__ ("pkg", "octave-config");
-    endif
-    if (! exist (octave_binary, "file"))
-      __gripe_missing_component__ ("pkg", "octave");
-    endif
-
-    if (verbose)
-      mkoctfile_program = [mkoctfile_program " --verbose"];
-    endif
-
-    cenv = {"MKOCTFILE"; mkoctfile_program;
-            "OCTAVE_CONFIG"; octave_config_program;
-            "OCTAVE"; octave_binary};
-    scenv = sprintf ("%s='%s' ", cenv{:});
-
-    ## Configure.
-    if (exist (fullfile (src, "configure"), "file"))
-      flags = "";
-      if (isempty (getenv ("CC")))
-        flags = [flags ' CC="' mkoctfile("-p", "CC") '"'];
+  try
+    ## Perform ./configure, make, make install in "src".
+    if (isfolder (fullfile (packdir, "src")))
+      src = fullfile (packdir, "src");
+      octave_bindir = __octave_config_info__ ("bindir");
+      ver = version ();
+      ext = __octave_config_info__ ("EXEEXT");
+      mkoctfile_program = fullfile (octave_bindir, ...
+                                    sprintf ("mkoctfile-%s%s", ver, ext));
+      octave_config_program = fullfile (octave_bindir, ...
+                                        sprintf ("octave-config-%s%s", ver, ext));
+      if (ispc () && ! isunix ())
+        octave_binary = fullfile (octave_bindir, sprintf ("octave-%s.bat", ver));
+      else
+        octave_binary = fullfile (octave_bindir, sprintf ("octave-%s%s", ver, ext));
       endif
-      if (isempty (getenv ("CXX")))
-        flags = [flags ' CXX="' mkoctfile("-p", "CXX") '"'];
+
+      if (! exist (mkoctfile_program, "file"))
+        __gripe_missing_component__ ("pkg", "mkoctfile");
       endif
-      if (isempty (getenv ("AR")))
-        flags = [flags ' AR="' mkoctfile("-p", "AR") '"'];
+      if (! exist (octave_config_program, "file"))
+        __gripe_missing_component__ ("pkg", "octave-config");
       endif
-      if (isempty (getenv ("RANLIB")))
-        flags = [flags ' RANLIB="' mkoctfile("-p", "RANLIB") '"'];
+      if (! exist (octave_binary, "file"))
+        __gripe_missing_component__ ("pkg", "octave");
       endif
-      cmd = ["cd '" src "'; " scenv "./configure " flags];
-      [status, output] = shell (cmd, verbose);
-      spew (fullfile (log_dir, 'configure.log'), output);
-      if (status != 0)
-        rmdir (desc.dir, "s");
-        disp (output);
-        error ("pkg: error running the configure script for %s.", desc.name);
+
+      if (verbose)
+        mkoctfile_program = [mkoctfile_program " --verbose"];
+      endif
+
+      cenv = {"MKOCTFILE"; mkoctfile_program;
+              "OCTAVE_CONFIG"; octave_config_program;
+              "OCTAVE"; octave_binary};
+      scenv = sprintf ("%s='%s' ", cenv{:});
+
+      ## Configure.
+      if (exist (fullfile (src, "configure"), "file"))
+        flags = "";
+        if (isempty (getenv ("CC")))
+          flags = [flags ' CC="' mkoctfile("-p", "CC") '"'];
+        endif
+        if (isempty (getenv ("CXX")))
+          flags = [flags ' CXX="' mkoctfile("-p", "CXX") '"'];
+        endif
+        if (isempty (getenv ("AR")))
+          flags = [flags ' AR="' mkoctfile("-p", "AR") '"'];
+        endif
+        if (isempty (getenv ("RANLIB")))
+          flags = [flags ' RANLIB="' mkoctfile("-p", "RANLIB") '"'];
+        endif
+        cmd = ["cd '" src "'; " scenv "./configure " flags];
+        [status, output] = shell (cmd, verbose);
+        spew (fullfile (log_dir, 'configure.log'), output);
+        if (status != 0)
+          rmdir (desc.dir, "s");
+          disp (output);
+          error ("pkg: error running the configure script for %s.", desc.name);
+        endif
+      endif
+
+      ## Make.
+      if (ispc ())
+        jobs = 1;
+      else
+        jobs = nproc ("overridable");
+      endif
+
+      if (exist (fullfile (src, "Makefile"), "file"))
+        [status, output] = shell (sprintf ("%s make --jobs %i --directory '%s'",
+                                           scenv, jobs, src), verbose);
+        spew (fullfile (log_dir, 'make.log'), output);
+        if (status != 0)
+          rmdir (desc.dir, "s");
+          disp (output);
+          error ("pkg: error running `make' for the %s package.", desc.name);
+        endif
       endif
     endif
-
-    ## Make.
-    if (ispc ())
-      jobs = 1;
-    else
-      jobs = nproc ("overridable");
-    endif
-
-    if (exist (fullfile (src, "Makefile"), "file"))
-      [status, output] = shell (sprintf ("%s make --jobs %i --directory '%s'",
-                                         scenv, jobs, src), verbose);
-      spew (fullfile (log_dir, 'make.log'), output);
-      if (status != 0)
-        rmdir (desc.dir, "s");
-        disp (output);
-        error ("pkg: error running `make' for the %s package.", desc.name);
-      endif
-    endif
-  endif
-
+  catch err
+    out.success = false;
+    out.error_message = err.message;
+    out.exception = err;
+  end_try_catch
 endfunction
 
 ## Executes a shell command.

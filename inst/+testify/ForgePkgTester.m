@@ -184,6 +184,10 @@ classdef ForgePkgTester
           endif
           copyfile (rslt.log_dirs{i}, pkg_build_log_dir);
         endfor
+        if ! rslt.success
+          error ('Package installation failed: %s. Error: %s', ...
+            pkg_name, rslt.error_message);
+        endif
         say ('Package installed: %s. Elapsed time: %.1f s', pkg_name, te);
       catch err
         say ('Error while installing package %s: %s', ...
