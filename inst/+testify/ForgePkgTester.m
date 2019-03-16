@@ -14,6 +14,7 @@ classdef ForgePkgTester
     pkgtool
     % Temp dir to hold output files
     tmp_dir
+    build_log_dir
     % Temp dir to run stuff in
     tmp_run_dir
     % Overrides the list of packages to test
@@ -51,12 +52,14 @@ classdef ForgePkgTester
       group_tmp_dir = fullfile (tempdir, tmp_dir_parent);
       mkdir (group_tmp_dir);
       this.tmp_dir = fullfile (group_tmp_dir, tmp_dir_name);
+      this.build_log_dir = fullfile (this.tmp_dir, 'build-logs');
       this.tmp_run_dir = fullfile (tempdir, [tmp_dir_name '-run']);
       this.pkgtool = testify.ForgePkgTool;
     endfunction
 
     function install_and_test_all_forge_pkgs (this)
       mkdir (this.tmp_dir);
+      mkdir (this.build_log_dir);
       if isempty (this.pkgs_to_test)
         qualifier = 'all';
         forge_pkgs = pkg ('-forge', 'list');
@@ -166,9 +169,21 @@ classdef ForgePkgTester
       try
         say ('Installing Forge package %s', pkg_name);
         flush_diary
+        installer = testify.ForgePkgInstaller;
         t0 = tic;
-        this.pkgtool.pkg ('install', '-forge', pkg_name);
+        rslt = installer.install (pkg_name);
         te = toc (t0);
+        pkg_build_log_dir = fullfile (this.build_log_dir, pkg_name);
+        for i = 1:numel (rslt.log_dirs)
+          contents = my_readdir (rslt.log_dirs{i});
+          if isempty (contents)
+            continue
+          endif
+          if ! exist (pkg_build_log_dir, 'dir')
+            mkdir (pkg_build_log_dir);
+          endif
+          copyfile (rslt.log_dirs{i}, pkg_build_log_dir);
+        endfor
         say ('Package installed: %s. Elapsed time: %.1f s', pkg_name, te);
       catch err
         say ('Error while installing package %s: %s', ...
@@ -274,6 +289,11 @@ classdef ForgePkgTester
   endmethods
 
 endclassdef
+
+function out = my_readdir (dir)
+  out = readdir (dir);
+  out(ismember (out, {'.' '..'})) = [];
+endfunction
 
 function say (varargin)
   fprintf ('%s: %s\n', 'testify.ForgePkgTester', sprintf (varargin{:}));
