@@ -72,7 +72,9 @@ classdef ForgePkgTester
     endfunction
     
     function this = install_and_test_forge_pkg (this, pkg_name)
-      say ('Doing package %s', pkg_name);
+      fprintf ('\n');
+      pkg_ver = this.pkgtool.current_version_for_pkg (pkg_name);
+      say ('Doing package %s %s', pkg_name, pkg_ver);
       if ismember (pkg_name, this.known_bad_pkgs_install)
         say ('Skipping install of known-bad package %s', pkg_name);
         this.skipped_pkgs_install{end+1} = pkg_name;

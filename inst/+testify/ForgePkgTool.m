@@ -77,6 +77,10 @@ classdef ForgePkgTool
       deps = setdiff (deps, {'octave'});
       out = deps;
     endfunction
+    
+    function out = current_version_for_pkg (this, pkg_name)
+      [out, url] = this.get_forge_pkg (pkg_name);
+    endfunction
   endmethods
 
   methods  
