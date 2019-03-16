@@ -69,7 +69,11 @@ classdef ForgePkgTool
       
       description_file = fullfile (extract_dir, pkg_src_dir, 'DESCRIPTION');
       descr = this.get_description (description_file);
-      deps = cellfun(@(s) {s.package}, descr.depends);
+      if isempty (descr.depends)
+        deps = {};
+      else
+        deps = cellfun(@(s) {s.package}, descr.depends);
+      endif
       deps = setdiff (deps, {'octave'});
       out = deps;
     endfunction

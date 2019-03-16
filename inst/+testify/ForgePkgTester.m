@@ -139,7 +139,10 @@ classdef ForgePkgTester
         fprintf ('%s', xcode_info);
       endif
       fprintf ('\n');
-      % TODO: List environment variables, with secret redaction
+      fprintf ('Environment Variables:\n');
+      env_var_displayer = testify.EnvVarDisplayer;
+      env_var_displayer.display_redacted_env_vars;
+      fprintf ('\n');
     endfunction
 
     function display_results (this)
