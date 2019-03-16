@@ -11,7 +11,7 @@ classdef ForgePkgTester
     % Packages that fail bad enough in install to crash octave
     known_bad_pkgs_install = {};
     % Packages that fail bad enough in tests to crash octave
-    known_bad_pkgs_test = {'control', 'octproj'};
+    known_bad_pkgs_test = {'control', 'octproj', 'quaternion'};
     skipped_pkgs_install = {};
     skipped_pkgs_test = {};
     tested_pkgs = {};
@@ -34,8 +34,11 @@ classdef ForgePkgTester
 
     function install_and_test_all_forge_pkgs (this)
       if isempty (this.pkgs_to_test)
+        qualifier = 'all';
         forge_pkgs = pkg ('-forge', 'list');
         this.pkgs_to_test = setdiff (forge_pkgs, this.known_bad_pkgs_install);
+      else
+        qualifier = 'selected';
       endif
       log_file = fullfile (this.tmp_dir, 'test_all_forge_pkgs.log');
       % Display log file at start so user can follow along in editor
@@ -46,7 +49,7 @@ classdef ForgePkgTester
       this.display_log_header;
       t0 = tic;
       unwind_protect
-        say ('Testing all Forge packages\n');
+        say ('Testing %s Forge packages\n', qualifier);
         pkgs_to_test = this.pkgs_to_test;
         say ('Testing packages: %s\n', strjoin(pkgs_to_test, ' '));
         fprintf('\n');
@@ -72,6 +75,7 @@ classdef ForgePkgTester
       if ismember (pkg_name, this.known_bad_pkgs_install)
         say ('Skipping install of known-bad package %s\n', pkg_name);
         this.skipped_pkgs_install{end+1} = pkg_name;
+        return
       endif
       say ('Installing Forge package %s\n', pkg_name);
       this.pkgtool.uninstall_all_pkgs_except ({'testify'});
