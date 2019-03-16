@@ -270,13 +270,14 @@ classdef ForgePkgTester
         if ! isempty (this.install_dependency_failures)
           fprintf ('Packages with failed dependency installations:\n');
           print_pkgs_one_per_line (this.install_dependency_failures);
+          fprintf ('\n');
         endif
         if ! isempty (this.install_failures)
           fprintf ('Failed package installations:\n');
           print_pkgs_one_per_line (this.install_failures);
+          fprintf ('\n');
         endif
       endif
-      fprintf ('\n');
       if isempty (this.test_failures)
         fprintf ('All packages passed tests OK.\n');
       else
