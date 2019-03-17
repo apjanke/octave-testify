@@ -103,6 +103,11 @@ classdef ForgePkgTool < handle
       say ("Downloading %s from %s to %s", pkg_name, url, cached_file);
       urlwrite (url, cached_file);
     endfunction
+
+    function clear_download_cache (this)
+      rm_rf (this.download_cache_dir);
+      mkdir (this.download_cache_dir);
+    endfunction
   
     function out = direct_dependencies_for_package (this, pkg_name)
       ## Check cache
@@ -434,4 +439,8 @@ function flush_diary
     diary off
     diary on
   endif
+endfunction
+
+function rm_rf (file)
+  system (sprintf ('rm -rf "%s"', file));
 endfunction
