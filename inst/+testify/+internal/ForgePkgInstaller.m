@@ -152,29 +152,30 @@ function out = pkg_install (varargin)
   local_files = {};
   tmp_dir = tempname ();
   unwind_protect
-    [urls, local_files] = cellfun ("get_forge_download", files,
+    [urls, local_files] = cellfun ("get_cached_forge_download", files,
                                    "uniformoutput", false);
-    [files, succ] = cellfun ("urlwrite", urls, local_files,
-                             "uniformoutput", false);
-    succ = [succ{:}];
-    if (! all (succ))
-      i = find (! succ, 1);
-      error ("pkg: could not download file %s from url %s",
-             local_files{i}, urls{i});
-    endif
-    rslt = install_private_impl (files, deps, prefix, archprefix, verbose, local_list,
+    rslt = install_private_impl (local_files, deps, prefix, archprefix, verbose, local_list,
              global_list, global_install);
     out.log_dirs = rslt.log_dirs;
     out.success = rslt.success;
     out.error_message = rslt.error_message;
     out.exception = rslt.exception;
   unwind_protect_cleanup
-    cellfun ("unlink", local_files);
     if (exist (tmp_dir, "file"))
       rmdir (tmp_dir, "s");
     endif
   end_unwind_protect
 endfunction
+
+% ======================================================
+% My special functions
+
+function [url, local_file] = get_cached_forge_download (pkg_name)
+  pkgtool = testify.internal.ForgePkgTool.instance;
+  [url, ~] = get_forge_download (pkg_name);
+  local_file = pkgtool.download_pkg_file (pkg_name);
+endfunction
+
 
 % ======================================================
 %
@@ -228,7 +229,7 @@ function out = install_private_impl (files, handle_deps, prefix, archprefix, ver
     ## Warn about non existent files.
     for i = 1:length (files)
       if (isempty (glob (files{i})))
-        warning ("file %s does not exist", files{i});
+        error ("pkg: file %s does not exist", files{i});
       endif
     endfor
 

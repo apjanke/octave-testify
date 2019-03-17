@@ -20,7 +20,8 @@ classdef ForgePkgTool < handle
   
   properties
     tmp_dir = fullfile (tempdir, "octave-testify-ForgePkgTool");
-    download_cache_dir = fullfile (getenv("HOME"), "octave", "testify", "download-cache");
+    download_cache_dir = fullfile (getenv("HOME"), "octave", "testify", ...
+      "download-cache", "octave-forge");
     dependency_cache = cell (0, 2);
     known_bogus_forge_pkgs = { 
       % Shows up in pkg -forge list but is not actually on Forge
