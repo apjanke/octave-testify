@@ -17,48 +17,88 @@
 ## along with Octave; see the file COPYING.  If not, see
 ## <https://www.gnu.org/licenses/>.
 
+## -*- texinfo -*-
+## @documentencoding UTF-8
+## @deftypefn  {} {} __test_pkgs__
+## @deftypefnx {} {} __test_pkgs__ @var{pkg_name}
+## @deftypefnx {} {} __test_pkgs__ (@var{pkg_names}, @var{options})
+## @deftypefnx {} {@var{nfailed} =} __test_pkgs__ (@dots{})
+## @deftypefnx {} {[@var{nfailed}, @var{__info__}] =} __test_pkgs__ (@dots{})
+## Run tests for packages
+##
+## A single package can be testing by passing @var{pkg_name}.
+##
+## @var{pkg_names} is a list of packages to test (a cell array of strings).
+## If @var{pkg_names} is empty or omitted, then all installed packages are
+## tested.
+##
+## @var{options} (struct, cellstr) is a set of name/value pairs of options.
+## Valid options:
+##
+## @table @asis
+##
+##    @item @code{all_together}  (boolean, false*)
+##        If true, test packages while they are all loaded together in
+##        addition to the individual package tests.
+##
+##    @item @code{n_iters}  (double, 1*)
+##        How many times to run each package test.  This is used for
+##        exposing intermittent failures.
+##
+##   @item @code{rand_seed}  (double, 42.0*)
+##        Seed to reset rand() generator to for each test.
+##
+##   @item @code{doctest}  (boolean, false*)
+##        Run doctest tests in addition to regular BISTs.
+##        Note that if you turn this on, it'll probably spam your logs.
+##
+## @end table
+##
+## Returns the total number of test failures.
+##
+## If the second argout, @var{__info__}, is specified, it returns an
+## object holding detailed results of the test run.  The format of this
+## object is undocumented and subject to change at any time; it is currently
+## for Octave's internal use only.
+##
+## @strong{Examples}
+##
+## Test a single package:
+## @example
+## @c doctest: +SKIP_IF (isempty (ver ('optim')))
+## @group
+## __test_pkgs__ optim
+##   @print{} Running package tests
+##   @print{} ...
+##   @print{} Testing package optim ...
+##   @print{} ...
+##   @print{} All tests passed.
+## @end group
+## @end example
+## @c TODO: is there a package we know is installed for doctesting?
+##
+## Test all installed packages:
+## @c doctest +SKIP
+## @example
+## __test_pkgs__
+## @end example
+##
+## Test all packages, including loading all together to check compatibility:
+## @c doctest _SKIP
+## @example
+## __test_pkgs__ ([], @{'all_together', true@})
+## @end example
+##
+## Torture test:
+## @c doctest _SKIP
+## @example
+## __test_pkgs__ ([], @{'all_together', true, 'n_iters', 4@})
+## @end example
+##
+## @seealso{test, runtests}
+## @end deftypefn
+
 function nfailed = __test_pkgs__ (pkg_names, options)
-  %__TEST_PKGS__ Run tests for packages
-  %
-  % nfailed = __test_pkgs__ (pkg_names)
-  % nfailed = __test_pkgs__ (pkg_names, options)
-  % [nfailed, __info__] = __test_pkgs__ (...)
-  %
-  % pkg_names (cellstr) is a list of packages to test. If pkg_names is empty
-  % or omitted, then all installed packages are tested.
-  %
-  % options (struct, cellstr) is a set of name/value pairs of options.
-  % Valid options:
-  %   all_together - (boolean, false*) If true, test packages while they are
-  %                  all loaded together in addition to the individual package
-  %                  tests.
-  %   n_iters - (double, 1*) How many times to run each package test. This is
-  %                  used for exposing intermittent failures.
-  %   rand_seed - (double, 42.0*) Seed to reset rand() generator to for each
-  %                  test.
-  %   doctest - (boolean, false*) Run doctest tests in addition to regular BISTs.
-  %                  Note that if you turn this on, it'll probably spam your logs.
-  %
-  % Returns the total number of test failures.
-  %
-  % If the second argout, __info__, is captured, it returns an object holding
-  % detailed results of the test run. The format of this object is undocumented
-  % and subject to change at any time; it is currently for Octave's internal use
-  % only.
-  %
-  % Examples:
-  %
-  % % Test a single package
-  % __test_pkgs__ ('control')
-  %
-  % % Test all installed packages
-  % __test_pkgs__
-  %
-  % % Test all packages, including loading all together to check compatibility
-  % __test_pkgs__ ([], {'all_together', true})
-  %
-  % % Torture test
-  % __test_pkgs__ ([], {'all_together', true, 'n_iters', 4})
 
   if nargin < 1;  pkg_names = {};  endif
   if nargin < 2;  options = {};    endif
