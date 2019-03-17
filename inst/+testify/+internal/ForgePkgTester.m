@@ -267,6 +267,13 @@ classdef ForgePkgTester
         fprintf ('Unix System Info (os-release):\n');
         fprintf ('%s', txt);
       endif
+      if ispc
+        [status, sys_info] = system ('systeminfo');
+        if status == 0
+          fprintf ('Windows System Info:\n');
+          fprintf ('%s', sys_info);
+        endif
+      endif
       fprintf ('\n');
       fprintf ('Environment Variables:\n');
       env_var_displayer = testify.internal.EnvVarDisplayer;
