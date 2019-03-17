@@ -308,7 +308,7 @@ classdef ForgePkgTool < handle
           ## Keyword/value pair
           colon = find (line == ":");
           if (length (colon) == 0)
-            warning ("pkg: skipping invalid line in DESCRIPTION file");
+            warning ("pkg: skipping invalid line in DESCRIPTION file %s", filename);
           else
             colon = colon(1);
             keyword = tolower (strtrim (line(1:colon-1)));
