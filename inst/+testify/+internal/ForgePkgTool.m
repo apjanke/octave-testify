@@ -3,6 +3,12 @@ classdef ForgePkgTool < handle
   properties
     tmp_dir = fullfile (tempdir, 'octave-testify-ForgePkgTool');
     dependency_cache = cell (0, 2);
+    known_bogus_forge_pkgs = { 
+      % Shows up in pkg -forge list but is not actually on Forge
+      "odepkg"
+      % Depends on nonexistent package "odepkg"
+      "ocs"
+      };
   endproperties
   
   methods (Static)
@@ -99,6 +105,11 @@ classdef ForgePkgTool < handle
       this.dependency_cache = [this.dependency_cache; {pkg_name deps}];
     endfunction
     
+    function out = all_current_valid_forge_pkgs (this)
+      listed = pkg ("-forge", "list");
+      out = setdiff (listed, this.known_bogus_forge_pkgs);
+    endfunction
+
     function out = current_version_for_pkg (this, pkg_name)
       [out, url] = this.get_forge_pkg (pkg_name);
     endfunction
