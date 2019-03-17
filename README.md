@@ -30,15 +30,18 @@ If enough people want it, I’ll try to make it happen.
 
 ### Quick start
 
-To get started using or testing this project, install it using Octave’s `pkg` function:
+To get started using or testing this project, install it and its dependencies using Octave’s `pkg` function:
 
 ```
+pkg install -forge doctest
 pkg install https://github.com/apjanke/octave-testify/releases/download/v0.1.0/testify-0.1.0.tar.gz
 pkg load testify
 ```
 
 ### Installation for development
 
+* Install the `doctest` package
+  * `pkg install -forge doctest`
 * Clone the repo.
   * `git clone https://github.com/apjanke/octave-testify`
 * Run `make dist` in a shell.
