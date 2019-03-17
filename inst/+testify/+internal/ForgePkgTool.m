@@ -93,7 +93,7 @@ classdef ForgePkgTool < handle
       else
         deps = cellfun(@(s) {s.package}, descr.depends);
       endif
-      deps = setdiff (deps, {'octave'});
+      deps = setdiff (deps, {"octave"});
       out = deps;
       this.dependency_cache = [this.dependency_cache; {pkg_name deps}];
     endfunction
