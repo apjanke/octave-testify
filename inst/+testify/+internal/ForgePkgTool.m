@@ -2,6 +2,7 @@ classdef ForgePkgTool < handle
   
   properties
     tmp_dir = fullfile (tempdir, 'octave-testify-ForgePkgTool');
+    dependency_cache = cell (0, 2);
   endproperties
   
   methods (Static)
