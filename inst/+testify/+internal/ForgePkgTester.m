@@ -1,4 +1,4 @@
-classdef ForgePkgTester
+classdef ForgePkgTester < handle
   %FORGEPKGTESTER Tests installation and BISTs of Forge packages
   %
   % This is a single-use object: create it and run one set of tests on it. If 
@@ -31,15 +31,6 @@ classdef ForgePkgTester
   endproperties
 
   properties
-    pkgtool = testify.internal.ForgePkgTool.instance
-    % Temp dir to hold output files
-    output_dir
-    % Subdir undir output_dir for the package build logs
-    build_log_dir
-    % Temp dir to run stuff in
-    tmp_run_dir
-    % Overrides the list of packages to test
-    pkgs_to_test = {};
     % Packages that fail bad enough in install to crash octave or junk up the tests
     known_bad_pkgs_install = {
       % Messes up the path somehow so the log is spammed with "load-path" warnings
@@ -47,15 +38,39 @@ classdef ForgePkgTester
     };
     % Packages that fail bad enough in tests to crash octave
     known_bad_pkgs_test = {};
+    % Pkgtool to do all Forge queries through
+    pkgtool = testify.internal.ForgePkgTool.instance
+    % Temp dir to hold output files
+    output_dir
+    % Subdir undir output_dir for the package build logs
+    build_log_dir
+    % Temp dir to run stuff in
+    tmp_run_dir
+    % The effective list of packages to test
+    pkgs_to_test = {};
+  endproperties
+  
+  properties
+    ## Working/transient properties
+    % Order to install packages and dependencies in
+    install_order
+    deps_installed_ok = {};
+    dep_install_failures = {};
     skipped_pkgs_install = {};
     skipped_pkgs_test = {};
     tested_pkgs = {};
     install_failures = {};
     install_dependency_failures = {};
+    test_passes = {};
     test_failures = {};
     test_elapsed_time = NaN;
     error_pkgs = {};
     file_droppings = {};
+  endproperties
+  
+  properties (Dependent)
+    % All packages installed as tested pkg or as dependency
+    all_installed_pkgs
   endproperties
   
   methods
@@ -82,6 +97,10 @@ classdef ForgePkgTester
       this.build_log_dir = fullfile (this.output_dir, "build-logs");
       this.tmp_run_dir = fullfile (tempdir, [output_dir_base_name "-run"]);
     endfunction
+    
+    function out = get.all_installed_pkgs (this)
+      out = [this.tested_pkgs this.deps_installed_ok];
+    endfunction
 
     function install_and_test_forge_pkgs (this)
       if (this.do_doctest)
@@ -91,12 +110,12 @@ classdef ForgePkgTester
       mkdir (this.build_log_dir);
       if isempty (this.pkgs_to_test)
         qualifier = "all";
-        forge_pkgs = pkg ("-forge", "list");
+        forge_pkgs = this.pkgtool.all_current_valid_forge_pkgs;
         this.pkgs_to_test = setdiff (forge_pkgs, this.known_bad_pkgs_install);
       else
         qualifier = "selected";
       endif
-      log_file = fullfile (this.output_dir, "test_all_forge_pkgs.log");
+      log_file = fullfile (this.output_dir, "test_forge_pkgs.log");
       % Display log file at start so user can follow along in editor
       fprintf ("Log file: %s\n", log_file);
       fprintf ("\n");
@@ -106,16 +125,26 @@ classdef ForgePkgTester
       t0 = tic;
       unwind_protect
         say ("Testing %s Forge packages", qualifier);
-        pkgs_to_test = this.pkgs_to_test;
         % Force ordering for consistency
-        pkgs_to_test = sort (pkgs_to_test);
-        say ("Testing packages: %s", strjoin(pkgs_to_test, " "));
-        fprintf("\n");
-        for i_pkg = 1:numel (pkgs_to_test)
-          this = this.install_and_test_forge_pkg (pkgs_to_test{i_pkg});
-          this.pkgtool.uninstall_all_pkgs_except (this.my_impl_pkgs);
+        this.pkgs_to_test = sort (this.pkgs_to_test);
+        say ("Testing packages: %s", strjoin(this.pkgs_to_test, " "));
+        fprintf ("\n");
+        % Compute safe install order
+        this.install_order = this.pkgtool.install_order_with_deps (this.pkgs_to_test);
+        say ("Install order (with deps): %s", strjoin(this.install_order, " "));
+        fprintf ("\n");
+        this.pkgtool.uninstall_all_pkgs_except (this.my_impl_pkgs);
+        for i_pkg = 1:numel (this.install_order)
+          pkg = this.install_order{i_pkg};
+          if ismember (pkg, this.pkgs_to_test)
+            this.install_and_test_forge_pkg (pkg);
+          else
+            % It's just a dependency
+            this.install_dependency (pkg);
+          endif
           flush_diary
         endfor
+        this.pkgtool.uninstall_all_pkgs_except (this.my_impl_pkgs);
       unwind_protect_cleanup
         this.test_elapsed_time = toc (t0);
         this.display_results;
@@ -136,7 +165,21 @@ classdef ForgePkgTester
       endif
     endfunction
 
-    function this = install_and_test_forge_pkg (this, pkg_name)
+    function install_dependency (this, pkg_name)
+      try
+        t0 = tic;
+        say ("Installing dependency: %s", pkg_name);
+        this.pkgtool.pkg ("install", "-forge", pkg_name);
+        te = toc (t0);
+        say ("Package installed (dependency): %s. Elapsed time: %.1f s", pkg_name, te);
+        this.deps_installed_ok{end+1} = pkg_name;
+      catch err
+        say ("Package install failure (dependency): %s: %s\n", pkg_name, err.message);
+        this.dep_install_failures{end+1} = pkg_name;
+      end_try_catch
+    endfunction
+
+    function install_and_test_forge_pkg (this, pkg_name)
       if exist (this.tmp_run_dir, "dir");
         rm_rf (this.tmp_run_dir);
       endif
@@ -179,22 +222,25 @@ classdef ForgePkgTester
         this.skipped_pkgs_install{end+1} = pkg_name;
         return
       endif
+      % Check dependencies
       deps = this.pkgtool.recursive_dependencies_for_package (pkg_name);
-      this.pkgtool.uninstall_all_pkgs_except (this.my_impl_pkgs);
       if ! isempty (deps)
-        try
-          t0 = tic;
-          say ("Installing dependencies for %s: %s", pkg_name, strjoin (deps, " "));
-          this.pkgtool.pkg ("install", "-forge", deps{:});
-          te = toc (t0);
-          say ("Package installed (dependencies): %s. Elapsed time: %.1f s", pkg_name, te);
-        catch err
-          say ("Error while installing package dependencies for %s: %s", ...
-            pkg_name, err.message);
+        [tf, loc] = ismember (deps, this.all_installed_pkgs);
+        if ! all (tf)
+          % Uh oh, some dep didn't install
+          [tf, loc] = ismember (deps, this.dep_install_failures);
+          if any (tf)
+            say ("Skipping package %s because of dependency install failures: %s", ...
+              pkg_name, strjoin (deps(tf), " "));
+          else
+            say ("Skipping package %s because dependencies are missing for unknown reason: %s", ...
+              pkg_name, strjoin (deps, " "));
+          endif
           this.install_dependency_failures{end+1} = pkg_name;
-          return;
-        end_try_catch
+          return
+        endif
       endif
+      % Install
       try
         say ("Installing Forge package %s", pkg_name);
         flush_diary
@@ -229,11 +275,14 @@ classdef ForgePkgTester
         this.skipped_pkgs_test{end+1} = pkg_name;
         return
       endif
+      % Test
       say ("Testing Forge package %s", pkg_name);
       try
         nfailed = __test_pkgs__ (pkg_name, {"doctest", this.do_doctest});
         if nfailed > 0
           this.test_failures{end+1} = pkg_name;
+        else
+          this.test_passes{end+1} = pkg_name;
         endif
       catch err
         say ("Error while testing package %s: %s", ...
@@ -249,6 +298,7 @@ classdef ForgePkgTester
       if status == 0
         out = chomp (host);
       else
+        % Yes, this might happen. E.g. hostname fails under Flatpak
         out = "unknown-host";
       endif
     endfunction
@@ -301,15 +351,21 @@ classdef ForgePkgTester
       fprintf ("\n");
       fprintf ("Tested %d packages in %s\n", ...
         numel (this.tested_pkgs), seconds_to_mmss (this.test_elapsed_time));
-      fprintf ("Packages tested: %s\n", strjoin(this.tested_pkgs, " "));
+      fprintf ("Packages tested (%d): %s\n", numel (this.tested_pkgs), ...
+        strjoin(this.tested_pkgs, " "));
       fprintf ("\n");
+      if ! isempty (this.test_passes)
+        fprintf ("Packages passed (%d):\n", numel (this.test_passes));
+        fprintf ("  %s\n", strjoin (this.test_passes, " "));
+        fprintf ("\n");
+      endif
       if ! isempty (this.skipped_pkgs_install)
-        fprintf ("Skipped known-bad packages:\n");
+        fprintf ("Skipped known-bad packages (%d):\n", numel (this.skipped_pkgs_install));
         print_pkgs_one_per_line (this.skipped_pkgs_install);
         fprintf ("\n");
       endif
       if ! isempty (this.skipped_pkgs_test)
-        fprintf ("Skipped tests on known-bad packages:\n");
+        fprintf ("Skipped tests on known-bad packages (%d):\n", numel (this.skipped_pkgs_test));
         print_pkgs_one_per_line (this.skipped_pkgs_test);
         fprintf ("\n");
       endif
@@ -317,20 +373,24 @@ classdef ForgePkgTester
         fprintf ("All packages installed OK.\n");
       else
         if ! isempty (this.install_dependency_failures)
-          fprintf ("Packages with failed dependency installations:\n");
+          fprintf ("Packages with failed dependency installations (%d):\n", numel (this.install_dependency_failures));
           print_pkgs_one_per_line (this.install_dependency_failures);
           fprintf ("\n");
         endif
         if ! isempty (this.install_failures)
-          fprintf ("Failed package installations:\n");
+          fprintf ("Failed package installations (%d):\n", numel (this.install_failures));
           print_pkgs_one_per_line (this.install_failures);
           fprintf ("\n");
         endif
       endif
+      if ! isempty (this.dep_install_failures)
+        fprintf ("Failed dependency installations (%d):\n", numel (this.dep_install_failures));
+        print_pkgs_one_per_line (this.dep_install_failures);
+      endif
       if isempty (this.test_failures)
         fprintf ("All packages passed tests OK.\n");
       else
-        fprintf ("Failed package tests:\n");
+        fprintf ("Failed package tests (%d):\n", numel (this.test_failures));
         print_pkgs_one_per_line (this.test_failures);
       endif
       fprintf ("\n");
