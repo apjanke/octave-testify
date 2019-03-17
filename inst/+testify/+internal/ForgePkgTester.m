@@ -31,7 +31,10 @@ classdef ForgePkgTester < handle
       % Crashes Octave in test
       "quaternion"
     }';
-    known_bad_pkgs_test_windows = {};
+    known_bad_pkgs_test_windows = {
+      % Seems to crash Octave
+      "control"
+    };
     known_bad_pkgs_test_linux = {
       % Crashes Octave in test
       "level-set"
