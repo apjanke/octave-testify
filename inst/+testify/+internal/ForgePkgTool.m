@@ -34,6 +34,7 @@ classdef ForgePkgTool
       for i = 1:numel (direct_deps)
         out = [out this.recursive_dependencies_for_package(direct_deps{i})];
       endfor
+      out = unique (out);
     endfunction
   
     function out = direct_dependencies_for_package (this, pkg_name)
