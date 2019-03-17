@@ -30,7 +30,8 @@ classdef ForgePkgTester
   properties
     pkgtool
     % Temp dir to hold output files
-    tmp_dir
+    output_dir
+    % Subdir undir output_dir for the package build logs
     build_log_dir
     % Temp dir to run stuff in
     tmp_run_dir
@@ -64,13 +65,19 @@ classdef ForgePkgTester
         this.known_bad_pkgs_test = testify.internal.ForgePkgTester.known_bad_pkgs_test_linux;
       endif
       timestamp = datestr(now, 'yyyy-mm-dd_HH-MM-SS');
-      tmp_dir_name = ['octave-testify-ForgePkgTester-' timestamp];
-      tmp_dir_parent = 'octave-testify-ForgePkgTester';
-      group_tmp_dir = fullfile (tempdir, tmp_dir_parent);
+      output_dir_base_name = ['octave-testify-ForgePkgTester-' timestamp];
+      if isunix && ! ismac
+        % Need to write to ~ to make results readily available under Flatpak
+        forge_tester_out_dir = fullfile (getenv ('HOME'), 'octave', 'testify', 'forge-tester');
+        group_tmp_dir = forge_tester_out_dir;
+      else
+        tmp_dir_parent = 'octave-testify-ForgePkgTester';
+        group_tmp_dir = fullfile (tempdir, tmp_dir_parent);
+      endif
       mkdir (group_tmp_dir);
-      this.tmp_dir = fullfile (group_tmp_dir, tmp_dir_name);
-      this.build_log_dir = fullfile (this.tmp_dir, 'build-logs');
-      this.tmp_run_dir = fullfile (tempdir, [tmp_dir_name '-run']);
+      this.output_dir = fullfile (group_tmp_dir, output_dir_base_name);
+      this.build_log_dir = fullfile (this.output_dir, 'build-logs');
+      this.tmp_run_dir = fullfile (tempdir, [output_dir_base_name '-run']);
       this.pkgtool = testify.internal.ForgePkgTool;
     endfunction
 
@@ -78,7 +85,7 @@ classdef ForgePkgTester
       if (this.do_doctest)
         pkg ('load', 'doctest');
       endif
-      mkdir (this.tmp_dir);
+      mkdir (this.output_dir);
       mkdir (this.build_log_dir);
       if isempty (this.pkgs_to_test)
         qualifier = 'all';
@@ -87,7 +94,7 @@ classdef ForgePkgTester
       else
         qualifier = 'selected';
       endif
-      log_file = fullfile (this.tmp_dir, 'test_all_forge_pkgs.log');
+      log_file = fullfile (this.output_dir, 'test_all_forge_pkgs.log');
       % Display log file at start so user can follow along in editor
       fprintf ('Log file: %s\n', log_file);
       fprintf ('\n');
