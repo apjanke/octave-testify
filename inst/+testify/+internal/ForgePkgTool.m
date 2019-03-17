@@ -20,6 +20,7 @@ classdef ForgePkgTool < handle
   
   properties
     tmp_dir = fullfile (tempdir, "octave-testify-ForgePkgTool");
+    download_cache_dir = fullfile (getenv("HOME"), "octave", "testify", "download-cache");
     dependency_cache = cell (0, 2);
     known_bogus_forge_pkgs = { 
       % Shows up in pkg -forge list but is not actually on Forge
@@ -41,6 +42,14 @@ classdef ForgePkgTool < handle
   endmethods
 
   methods
+    function this = ForgePkgTool ()
+      [ok, msg] = mkdir (this.download_cache_dir);
+      if ! ok
+        error ('ForgePkgTool: Could not create cache dir %s: %s', ...
+          this.download_cache_dir, msg);
+      endif
+    endfunction
+
     function pkg (this, varargin)
       say ("%s %s", "pkg", strjoin (varargin, " "));
       pkg (varargin{:});
@@ -72,6 +81,27 @@ classdef ForgePkgTool < handle
       endfor
       out = unique (out);
     endfunction
+
+    function out = basename (this, file)
+      ix = find (file == filesep, 1, "last");
+      if isempty (ix)
+        out = file;
+      else
+        out = file(ix+1:end);
+      endif
+    endfunction
+
+    function out = download_pkg_file (this, pkg_name)
+      [url, local_file] = this.get_forge_download (pkg_name);
+      local_basename = this.basename (local_file);
+      cached_file = fullfile (this.download_cache_dir, local_basename);
+      out = cached_file;
+      if exist (cached_file, "file")
+        return
+      endif
+      say ("Downloading %s from %s to %s", pkg_name, url, cached_file);
+      urlwrite (url, cached_file);
+    endfunction
   
     function out = direct_dependencies_for_package (this, pkg_name)
       ## Check cache
@@ -83,11 +113,7 @@ classdef ForgePkgTool < handle
       endif
       ## Cache miss: get from Forge
       # say ("dep cache miss: %s", pkg_name);
-      [url, local_file] = this.get_forge_download (pkg_name);
-      if ! exist (local_file)
-        say ("Downloading %s from %s", pkg_name, url);
-        urlwrite (url, local_file);
-      endif
+      local_file = this.download_pkg_file (pkg_name);
       tgz = local_file;
       extract_dir = tempname;
       mkdir (extract_dir);
