@@ -107,7 +107,7 @@ classdef BistRunResult
       out.n_skip_feature = A.n_skip_feature + B.n_skip_feature;
       out.n_skip_runtime = A.n_skip_runtime + B.n_skip_runtime;
       out.files_with_tests = unique([A.files_with_tests B.files_with_tests]);
-      out.files_with_no_tests = unique([A.files_with_tests B.files_with_tests]);
+      out.files_with_no_tests = unique([A.files_with_no_tests B.files_with_no_tests]);
       out.failed_files = unique([A.failed_files B.failed_files]);
     endfunction
     
