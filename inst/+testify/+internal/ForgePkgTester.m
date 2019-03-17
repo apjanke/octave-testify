@@ -243,7 +243,7 @@ classdef ForgePkgTester
     endfunction
     
     function out = my_safe_hostname (this)
-      [status, host] = system ('hostname');
+      [status, host] = system ('hostname 2>/dev/null');
       if status == 0
         out = chomp (host);
       else
