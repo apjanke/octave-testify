@@ -300,8 +300,8 @@ classdef ForgePkgTester
       fprintf ('\n');
       fprintf ('========  PACKAGE INSTALL AND TEST RESULTS  ========\n');
       fprintf ('\n');
-      fprintf ('Tested %d packages in %.1f s\n', ...
-        numel (this.tested_pkgs), this.test_elapsed_time);
+      fprintf ('Tested %d packages in %s\n', ...
+        numel (this.tested_pkgs), seconds_to_mmss (this.test_elapsed_time));
       fprintf ('Packages tested: %s\n', strjoin(this.tested_pkgs, ' '));
       fprintf ('\n');
       if ! isempty (this.skipped_pkgs_install)
@@ -368,4 +368,10 @@ endfunction
 
 function rm_rf (file)
   system (sprintf ('rm -rf "%s"', file));
+endfunction
+
+function out = seconds_to_mmss (sec)
+  minutes = floor (sec / 60);
+  seconds = round (sec - (minutes * 60));
+  out = sprintf ('%02d:%02d', minutes, seconds);
 endfunction
