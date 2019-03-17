@@ -25,6 +25,11 @@ function install_and_test_all_forge_pkgs (pkgs_to_test, options)
   % If omitted or empty, tests all packages currently available on the Octave
   % Forge website.
   %
+  % NOTE: Running this function will uninstall all packages except for testify
+  % and doctest. This is because Octave's pkg doesn't support isolated virtual
+  % environments for package installation. Don't run this on a machine that you've
+  % spent significant time setting up pacakges for.
+  %
   % options (cellstr or struct) controls behavior. Valid options:
   %   doctest (boolean, false*) - Whether to do doctest tests in addition to
   %       regular BIST tests.
