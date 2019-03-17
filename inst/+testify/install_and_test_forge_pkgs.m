@@ -31,12 +31,12 @@ function install_and_test_forge_pkgs (pkgs_to_test, options)
   % spent significant time setting up pacakges for.
   %
   % options (cellstr or struct) controls behavior. Valid options:
-  %   doctest (boolean, true*) - Whether to do doctest tests in addition to
+  %   doctest (boolean, false*) - Whether to do doctest tests in addition to
   %       regular BIST tests.
   if nargin < 2;  options = {};    endif
 
   default_opts = struct (...
-    "doctest",      true);
+    "doctest",      false);
   opts = testify.internal.Util.parse_options (options, default_opts);
 
   if nargin < 1; pkgs_to_test = {}; endif
