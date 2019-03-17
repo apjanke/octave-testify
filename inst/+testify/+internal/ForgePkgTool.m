@@ -114,7 +114,7 @@ classdef ForgePkgTool < handle
       [out, url] = this.get_forge_pkg (pkg_name);
     endfunction
     
-    function out = order_deps (this, pkgs)
+    function out = install_order_with_deps (this, pkgs)
       %ORDER_DEPS Calculate an in-dependency-order ordering for package installs
       %
       % out = order_deps (this, pkgs)
@@ -126,9 +126,47 @@ classdef ForgePkgTool < handle
       %             is not significant.
       %   install_order - Order in which pkgs should be installed. Order is
       %             significant.
+      pkgs = cellstr (pkgs);
+      requested = pkgs;
       install_order = {};
-      prereqs = {};
-      error ('order_deps is not yet implemented.');
+      path = {};
+
+      function step (pkg_name)
+        fprintf ("\n");
+        fprintf ("step: %s\n", pkg_name);
+        fprintf ("path: %s\n", strjoin (path, " "));
+        fprintf ("install_order: %s\n", strjoin (install_order, " "));
+        fprintf ("requested: %s\n", strjoin (requested, " "));       
+        if ismember (pkg_name, install_order)
+          fprintf ("already in install order: %s. skipping.\n", pkg_name);
+          return
+        endif
+        if ismember (pkg_name, path)
+          error ("ForgePkgTool: Oh, crap! Dependency cycle detected: %s:", ...
+            strjoin ([path {pkg_name}], " -> "));
+        endif
+        path{end+1} = pkg_name;
+        deps = this.direct_dependencies_for_package (pkg_name);
+        for i = 1:numel (deps)
+          dep = deps{i};
+          fprintf ("dep %d: %s\n", i, dep);
+          if ismember (dep, install_order)
+            continue
+          endif
+          step (dep);
+        endfor
+        [tf, loc] = ismember (pkg_name, requested);
+        requested(loc(tf)) = [];
+        install_order{end+1} = pkg_name;
+        path(end) = [];
+      endfunction
+
+      while ! isempty (requested)
+        [next_pkg, requested] = deal (requested{1}, requested(2:end));
+        fprintf ("requested is not empty. next_pkg = %s\n", next_pkg);
+        step (next_pkg);
+      endwhile
+      out = install_order;
     endfunction
   endmethods
 
