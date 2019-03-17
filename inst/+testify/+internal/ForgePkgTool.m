@@ -22,10 +22,8 @@ classdef ForgePkgTool
       pkg_list = pkg ('list');
       installed_pkgs = cellfun(@(s) { s.name }, pkg_list);
       to_uninstall = setdiff (installed_pkgs, exclusions);
-      for i = 1:numel (to_uninstall)
-        this.pkg ('unload', to_uninstall{i});
-      endfor
       if ! isempty (to_uninstall)
+        this.pkg ('unload', to_uninstall{:});
         this.pkg ('uninstall', to_uninstall{:});
       end
     endfunction
