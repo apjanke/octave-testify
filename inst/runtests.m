@@ -113,7 +113,7 @@ function rslts = run_all_tests (directory, do_class_dirs)
   endfor
   if (! isempty (rslts.files_with_no_tests))
     printf ("\nThe following files in %s have no tests:\n\n", directory);
-    printf ("%s\n", list_in_columns (rslts.files_with_no_tests));
+    printf ("%s", list_in_columns (rslts.files_with_no_tests));
   endif
 
   ## Recurse into class directories since they are implied in the path
