@@ -1,5 +1,6 @@
 ## Copyright (C) 2010-2018 John W. Eaton
 ## Copyright (C) 2019 Andrew Janke
+## Copyright (C) 2019 Colin B. Macdonald
 ##
 ## This file is part of Octave.
 ##
