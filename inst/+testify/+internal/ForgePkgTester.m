@@ -5,10 +5,20 @@ classdef ForgePkgTester
   % you want to run another test cycle, create a new object.
   
   properties (Constant)
-    known_bad_pkgs_test_mac = {'control', 'octproj', 'quaternion'};
+    known_bad_pkgs_test_mac = {
+      % Crashes Octave in test
+      'control'
+      % Crashes Octave in test
+      'octproj'
+      % Crashes Octave in test
+      'quaternion'
+    }';
     known_bad_pkgs_test_windows = {};
     known_bad_pkgs_test_linux = {};
-    my_impl_pkgs  = {'testify', 'doctest'};
+    my_impl_pkgs  = {
+      'testify'
+      'doctest'
+    }';
   endproperties
 
   properties
