@@ -1,7 +1,7 @@
 classdef EnvVarDisplayer
   
   properties
-    secret_redaction_pattern = 'password|token|secret'
+    secret_redaction_pattern = 'pass|token|secret'
     ugly_var_patterns = {
       '^LESS_TERMCAP'
       'LSCOLORS'
