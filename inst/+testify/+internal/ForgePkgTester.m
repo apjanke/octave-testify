@@ -235,9 +235,17 @@ classdef ForgePkgTester
       flush_diary
     endfunction
     
-    function display_log_header (this)
+    function out = my_safe_hostname (this)
       [status, host] = system ('hostname');
-      host = chomp (host);
+      if status == 0
+        out = chomp (host);
+      else
+        out = 'unknown-host';
+      endif
+    endfunction
+
+    function display_log_header (this)
+      host = this.my_safe_hostname;
       fprintf ('Tests run on %s at %s\n', host, datestr (now));
       ver
       if ismac
