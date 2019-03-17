@@ -83,8 +83,18 @@ classdef ForgePkgTool
     
     function out = order_deps (this, pkgs)
       %ORDER_DEPS Calculate an in-dependency-order ordering for package installs
+      %
+      % out = order_deps (this, pkgs)
+      %
+      % pkgs (cellstr) is a list of names of Octave Forge packages to install.
+      %
+      % Returns a struct with fields:
+      %   prereqs - List of other packages to install before the input pkgs. Order
+      %             is not significant.
+      %   install_order - Order in which pkgs should be installed. Order is
+      %             significant.
       install_order = {};
-      other_deps = {};
+      prereqs = {};
       error ('order_deps is not yet implemented.');
     endfunction
   endmethods
