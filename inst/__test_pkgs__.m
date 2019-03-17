@@ -36,6 +36,8 @@ function nfailed = __test_pkgs__ (pkg_names, options)
   %                  used for exposing intermittent failures.
   %   rand_seed - (double, 42.0*) Seed to reset rand() generator to for each
   %                  test.
+  %   doctest - (boolean, false*) Run doctest tests in addition to regular BISTs.
+  %                  Note that if you turn this on, it'll probably spam your logs.
   %
   % Returns the total number of test failures.
   %
@@ -64,8 +66,9 @@ function nfailed = __test_pkgs__ (pkg_names, options)
   default_opts = struct (...
     "all_together", false, ...
     "n_iters",      1, ...
-    "rand_seed",    42.0);
-  opts = parse_options (options, default_opts);
+    "rand_seed",    42.0, ...
+    "doctest",      false);
+  opts = testify.internal.Util.parse_options (options, default_opts);
 
   if (isempty (pkg_names))
     pkg_names = list_installed_packages ();
@@ -103,6 +106,14 @@ function nfailed = __test_pkgs__ (pkg_names, options)
         pkgs_with_failures{end+1} = pkg_name;
       endif
       nfailed += nf;
+      if opts.doctest
+        fprintf ("Doctest tests:\n");
+        [n_passed, n_tests, summary] = doctest (pkg_dir);
+        n_failed = n_tests - n_passed;
+        fprintf ("doctest results: n_passed=%d n_tests=%d n_failed=%d\n", ...
+          n_passed, n_tests, n_failed);
+        nfailed += n_failed;
+      endif
       pkg ("unload", pkg_name);
     endfor
   endfor

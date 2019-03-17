@@ -16,9 +16,27 @@
 ## along with Octave; see the file COPYING.  If not, see
 ## <https://www.gnu.org/licenses/>.
 
-function install_and_test_all_forge_pkgs (pkgs_to_test)
+function install_and_test_all_forge_pkgs (pkgs_to_test, options)
+  %INSTALL_AND_TEST_ALL_FORGE_PKGS Install and test all or selected forge packages
+  %
+  % testify.install_and_test_all_forge_pkgs (pkgs_to_test, options)
+  %
+  % pkgs_to_test (cellstr) is a list of names of Octave Forge packages to test.
+  % If omitted or empty, tests all packages currently available on the Octave
+  % Forge website.
+  %
+  % options (cellstr or struct) controls behavior. Valid options:
+  %   doctest (boolean, false*) - Whether to do doctest tests in addition to
+  %       regular BIST tests.
+  if nargin < 2;  options = {};    endif
+
+  default_opts = struct (...
+    "doctest",      false);
+  opts = testify.internal.Util.parse_options (options, default_opts);
+
   if nargin < 1; pkgs_to_test = {}; endif
   pkgtester = testify.internal.ForgePkgTester;
+  pkgtester.do_doctest = opts.doctest;
   if ~isempty (pkgs_to_test)
     pkgtester.pkgs_to_test = pkgs_to_test;
   endif

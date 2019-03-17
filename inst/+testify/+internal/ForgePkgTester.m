@@ -8,6 +8,13 @@ classdef ForgePkgTester
     known_bad_pkgs_test_mac = {'control', 'octproj', 'quaternion'};
     known_bad_pkgs_test_windows = {};
     known_bad_pkgs_test_linux = {};
+    my_impl_pkgs  = {'testify', 'doctest'};
+  endproperties
+
+  properties
+    ## User-settable properties
+    % If true, run doctest tests on packages in addition to regular BISTs
+    do_doctest = false;
   endproperties
 
   properties
@@ -58,6 +65,9 @@ classdef ForgePkgTester
     endfunction
 
     function install_and_test_all_forge_pkgs (this)
+      if (this.do_doctest)
+        pkg ('load', 'doctest');
+      endif
       mkdir (this.tmp_dir);
       mkdir (this.build_log_dir);
       if isempty (this.pkgs_to_test)
@@ -78,13 +88,13 @@ classdef ForgePkgTester
       unwind_protect
         say ('Testing %s Forge packages', qualifier);
         pkgs_to_test = this.pkgs_to_test;
-        % Sort for consistency
+        % Force ordering for consistency
         pkgs_to_test = sort (pkgs_to_test);
         say ('Testing packages: %s', strjoin(pkgs_to_test, ' '));
         fprintf('\n');
         for i_pkg = 1:numel (pkgs_to_test)
           this = this.install_and_test_forge_pkg (pkgs_to_test{i_pkg});
-          this.pkgtool.uninstall_all_pkgs_except ('testify');
+          this.pkgtool.uninstall_all_pkgs_except (this.my_impl_pkgs);
           flush_diary
         endfor
       unwind_protect_cleanup
@@ -151,7 +161,7 @@ classdef ForgePkgTester
         return
       endif
       deps = this.pkgtool.recursive_dependencies_for_package (pkg_name);
-      this.pkgtool.uninstall_all_pkgs_except ({'testify'});
+      this.pkgtool.uninstall_all_pkgs_except (this.my_impl_pkgs);
       if ! isempty (deps)
         try
           t0 = tic;
@@ -202,7 +212,7 @@ classdef ForgePkgTester
       endif
       say ('Testing Forge package %s', pkg_name);
       try
-        nfailed = __test_pkgs__ (pkg_name);
+        nfailed = __test_pkgs__ (pkg_name, {'doctest', this.do_doctest});
         if nfailed > 0
           this.test_failures{end+1} = pkg_name;
         endif
