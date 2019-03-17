@@ -16,10 +16,10 @@
 ## along with Octave; see the file COPYING.  If not, see
 ## <https://www.gnu.org/licenses/>.
 
-function install_and_test_all_forge_pkgs (pkgs_to_test, options)
-  %INSTALL_AND_TEST_ALL_FORGE_PKGS Install and test all or selected forge packages
+function install_and_test_forge_pkgs (pkgs_to_test, options)
+  %INSTALL_AND_TEST_FORGE_PKGS Install and test all or selected forge packages
   %
-  % testify.install_and_test_all_forge_pkgs (pkgs_to_test, options)
+  % testify.install_and_test_forge_pkgs (pkgs_to_test, options)
   %
   % pkgs_to_test (cellstr) is a list of names of Octave Forge packages to test.
   % If omitted or empty, tests all packages currently available on the Octave
@@ -45,5 +45,5 @@ function install_and_test_all_forge_pkgs (pkgs_to_test, options)
   if ~isempty (pkgs_to_test)
     pkgtester.pkgs_to_test = pkgs_to_test;
   endif
-  pkgtester.install_and_test_all_forge_pkgs;  
+  pkgtester.install_and_test_forge_pkgs;  
 endfunction

@@ -74,7 +74,7 @@ classdef ForgePkgTester
       this.pkgtool = testify.internal.ForgePkgTool;
     endfunction
 
-    function install_and_test_all_forge_pkgs (this)
+    function install_and_test_forge_pkgs (this)
       if (this.do_doctest)
         pkg ('load', 'doctest');
       endif
