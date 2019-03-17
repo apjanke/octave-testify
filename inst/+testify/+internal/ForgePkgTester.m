@@ -31,7 +31,7 @@ classdef ForgePkgTester
   endproperties
 
   properties
-    pkgtool
+    pkgtool = testify.internal.ForgePkgTool.instance
     % Temp dir to hold output files
     output_dir
     % Subdir undir output_dir for the package build logs
@@ -81,7 +81,6 @@ classdef ForgePkgTester
       this.output_dir = fullfile (group_tmp_dir, output_dir_base_name);
       this.build_log_dir = fullfile (this.output_dir, 'build-logs');
       this.tmp_run_dir = fullfile (tempdir, [output_dir_base_name '-run']);
-      this.pkgtool = testify.internal.ForgePkgTool;
     endfunction
 
     function install_and_test_forge_pkgs (this)

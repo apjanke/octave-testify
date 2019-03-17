@@ -1,9 +1,20 @@
-classdef ForgePkgTool
+classdef ForgePkgTool < handle
   
   properties
     tmp_dir = fullfile (tempdir, 'octave-testify-ForgePkgTool');
   endproperties
   
+  methods (Static)
+    function out = instance
+      %INSTANCE A shared persistent instance, useful for caching
+      persistent val
+      if isempty (val)
+        val = testify.internal.ForgePkgTool;
+      endif
+      out = val;
+    endfunction
+  endmethods
+
   methods
     function pkg (this, varargin)
       say ("%s %s", "pkg", strjoin (varargin, " "));
@@ -38,6 +49,15 @@ classdef ForgePkgTool
     endfunction
   
     function out = direct_dependencies_for_package (this, pkg_name)
+      ## Check cache
+      [tf, loc] = ismember (pkg_name, this.dependency_cache(:,1));
+      if tf
+        say ("dep cache hit: %s", pkg_name);
+        out = this.dependency_cache{loc,2};
+        return
+      endif
+      ## Cache miss: get from Forge
+      say ("dep cache miss: %s", pkg_name);
       [url, local_file] = this.get_forge_download (pkg_name);
       if ! exist (local_file)
         say ("Downloading %s from %s", pkg_name, url);
@@ -75,6 +95,7 @@ classdef ForgePkgTool
       endif
       deps = setdiff (deps, {'octave'});
       out = deps;
+      this.dependency_cache = [this.dependency_cache; {pkg_name deps}];
     endfunction
     
     function out = current_version_for_pkg (this, pkg_name)
