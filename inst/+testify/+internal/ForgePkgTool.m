@@ -6,12 +6,12 @@ classdef ForgePkgTool
   
   methods
     function pkg (this, varargin)
-      say ('%s %s', 'pkg', strjoin (varargin, ' '));
+      say ("%s %s", "pkg", strjoin (varargin, " "));
       pkg (varargin{:});
     endfunction
     
     function out = tmpdir (this)
-      if ! exist (this.tmp_dir, 'dir')
+      if ! exist (this.tmp_dir, "dir")
         mkdir (this.tmp_dir);
       endif
       out = this.tmp_dir;
@@ -19,12 +19,12 @@ classdef ForgePkgTool
 
     function uninstall_all_pkgs_except (this, exclusions)
       exclusions = cellstr (exclusions);
-      pkg_list = pkg ('list');
+      pkg_list = pkg ("list");
       installed_pkgs = cellfun(@(s) { s.name }, pkg_list);
       to_uninstall = setdiff (installed_pkgs, exclusions);
       if ! isempty (to_uninstall)
-        this.pkg ('unload', to_uninstall{:});
-        this.pkg ('uninstall', to_uninstall{:});
+        this.pkg ("unload", to_uninstall{:});
+        this.pkg ("uninstall", to_uninstall{:});
       end
     endfunction
     
@@ -40,7 +40,7 @@ classdef ForgePkgTool
     function out = direct_dependencies_for_package (this, pkg_name)
       [url, local_file] = this.get_forge_download (pkg_name);
       if ! exist (local_file)
-        say ('Downloading %s from %s', pkg_name, url);
+        say ("Downloading %s from %s", pkg_name, url);
         urlwrite (url, local_file);
       endif
       tgz = local_file;
@@ -53,7 +53,7 @@ classdef ForgePkgTool
       else
         func_uncompress = @untar;
         % Handle double ".tar.gz" file extension
-        base_name = regexprep (base_name, '\.tar$', '');
+        base_name = regexprep (base_name, "\.tar$", "");
       endif
       func_uncompress (tgz, extract_dir);
       ## Get the name of the directories produced by tar.
@@ -66,7 +66,7 @@ classdef ForgePkgTool
       endif
       pkg_src_dir = dirlist{3};
       
-      description_file = fullfile (extract_dir, pkg_src_dir, 'DESCRIPTION');
+      description_file = fullfile (extract_dir, pkg_src_dir, "DESCRIPTION");
       descr = this.get_description (description_file);
       if isempty (descr.depends)
         deps = {};
