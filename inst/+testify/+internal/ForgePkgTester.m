@@ -195,19 +195,15 @@ classdef ForgePkgTester < handle
         end_try_catch
       unwind_protect_cleanup
         this.tested_pkgs{end+1} = pkg_name;
-        try
-          file_droppings = this.find_file_droppings;
-          if ! isempty (file_droppings)
-            fprintf ("\n");
-            fprintf ("File droppings were left by %s:\n", pkg_name);
-            for i = 1:numel (file_droppings)
-              fprintf ("  %s\n", file_droppings{i});
-            endfor
-            fprintf ("\n");
-          endif
-        catch err
-          fprintf ("Error while detecting file droppings: %s\n", err.message);
-        end_try_catch
+        file_droppings = this.find_file_droppings;
+        if ! isempty (file_droppings)
+          fprintf ("\n");
+          fprintf ("File droppings were left by %s:\n", pkg_name);
+          for i = 1:numel (file_droppings)
+            fprintf ("  %s\n", file_droppings{i});
+          endfor
+          fprintf ("\n");
+        endif
         cd (orig_pwd);
         rm_rf (this.tmp_run_dir);
       end_unwind_protect
