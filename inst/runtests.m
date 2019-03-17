@@ -88,7 +88,6 @@ function rslts = run_all_tests (directory, do_class_dirs)
   rslts = octave.test.internal.BistRunResult;
   flist = readdir (directory);
   dirs = {};
-  no_tests = {};
   printf ("Processing files in %s:\n\n", directory);
   fflush (stdout);
   for i = 1:numel (flist)
@@ -98,9 +97,9 @@ function rslts = run_all_tests (directory, do_class_dirs)
       ff = fullfile (directory, f);
       if (has_tests (ff))
         print_test_file_name (f);
-        rslt = test (ff, "quiet");
+        [~, rslt] = test (ff, "quiet");
         print_pass_fail (rslt);
-        rlsts += rslt;
+        rslts += rslt;
         fflush (stdout);
       elseif (has_functions (ff))
         rslts.files_with_no_tests{end+1} = f;
@@ -112,9 +111,9 @@ function rslts = run_all_tests (directory, do_class_dirs)
       endif
     endif
   endfor
-  if (! isempty (no_tests))
+  if (! isempty (rslts.files_with_no_tests))
     printf ("\nThe following files in %s have no tests:\n\n", directory);
-    printf ("%s", list_in_columns (no_tests));
+    printf ("%s\n", list_in_columns (rslts.files_with_no_tests));
   endif
 
   ## Recurse into class directories since they are implied in the path
