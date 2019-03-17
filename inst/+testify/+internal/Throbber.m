@@ -5,9 +5,7 @@ classdef Throbber < handle
   %
   % This source file is encoded in UTF-8.
   %
-  % This is a work in progress. Not all the throbber styles work. They look better
-  % in a real terminal than the GUI Command Window, because the GUI's terminal widget
-  % has a slow refresh.
+  % This is a work in progress. Not all the throbber styles work.
   %
   % Some of the styles cause CLI Octave to hang, in octave-default. Looks like
   % it's a pause() bug: https://savannah.gnu.org/bugs/index.php?55940.
@@ -15,9 +13,13 @@ classdef Throbber < handle
   % TODO: Should use sleep() instead of pause(), because "pause off" may have
   % happened, and because of that bug.
   %
-  % TODO: I think we need wcwidth(3) support to use multi-column Unicode chars
-  % correctly. For now, we'll hardcode sequence widths where needed.
+  % TODO: I think we need wcwidth(3) or UCHAR_EAST_ASIAN_WIDTH property detection
+  % support to use multi-column Unicode chars correctly. For now, we'll just
+  % hardcode sequence widths where needed.
   %   http://man7.org/linux/man-pages/man3/wcwidth.3.html
+  %   https://stackoverflow.com/questions/15631168/validate-japanese-character-in-active-record-callback/15651264#15651264
+  %   https://www.cl.cam.ac.uk/~mgk25/ucs/wcwidth.c
+  %   http://www.icu-project.org/apiref/icu4c/uchar_8h.html#a3376f0d34bb23c54671859f1978b4226
   
   properties (Constant)
     styles = {
@@ -55,8 +57,6 @@ classdef Throbber < handle
       "see_no_evil" {{"🙈" "🙉" "🙊"}, 2}
       "pattycake" {{"🙏", "🙌"}, 2}
       "gestures" {{"🙍" "🙋" "🙎" "🙆" "🙎" "🙅"}, 2}
-      % Knda works. Has an unpleasant tofu flash between steps in GUI Command
-      % Window. Works fine in terminal.
       "clocks" {{ "🕐" "🕑" "🕒" "🕓" "🕔" "🕕" "🕖" "🕗" "🕘" "🕙" "🕚" "🕛" }, 2}
       % Doesn't work right: either it doesn't erase chars left behind to the right of sequence,
       % or, if we normalize it, advances across the screen.
@@ -155,29 +155,33 @@ classdef Throbber < handle
     endfunction
     
     function start (this)
+      if ! isempty (this.index)
+        error ("Throbber: already started; cannot call start()");
+      endif
       this.index = 1;
-      this.emit_sequence;
+      fprintf ("%s", this.emission_sequence);
     endfunction
     
     function step (this)
       if isempty (this.index)
         error ("Throbber: not started; cannot call step()");
       endif
-      this.delete_sequence;
+      output = this.deletion_sequence;
       this.index = this.index + 1;
       if this.index > numel (this.sequence)
         this.index = 1;
       endif
-      this.emit_sequence;
+      % Combine deletion and rewriting an a single print to avoid flashing
+      output = [output this.emission_sequence];
+      fprintf ("%s", output);
     endfunction
     
     function stop (this)
       if isempty (this.index)
         error ("Throbber: not started; cannot call stop()");
       endif
-      this.delete_sequence;
-      fprintf ("%s", repmat (" ", [1 this.n_cols]));
-      this.delete_sequence;
+      output = [this.deletion_sequence repmat(" ", [1 this.n_cols]) this.deletion_sequence];
+      fprintf ("%s", output);
       this.index = [];
     endfunction
   endmethods
@@ -198,13 +202,13 @@ classdef Throbber < handle
       endif
     endfunction
 
-    function delete_sequence (this)
+    function out = deletion_sequence (this)
       backspace = char (8);
-      fprintf ("%s", repmat (backspace, [1 this.n_cols]));
+      out = repmat (backspace, [1 this.n_cols]);
     endfunction
     
-    function emit_sequence (this)
-      fprintf ("%s", this.sequence{this.index});
+    function out = emission_sequence (this)
+      out = this.sequence{this.index};
     endfunction
   endmethods
 endclassdef
