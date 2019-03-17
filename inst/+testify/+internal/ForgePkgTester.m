@@ -14,7 +14,10 @@ classdef ForgePkgTester
       'quaternion'
     }';
     known_bad_pkgs_test_windows = {};
-    known_bad_pkgs_test_linux = {};
+    known_bad_pkgs_test_linux = {
+      % Crashes Octave in test
+      'level-set'
+    };
     my_impl_pkgs  = {
       'testify'
       'doctest'
