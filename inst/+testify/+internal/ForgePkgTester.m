@@ -36,6 +36,8 @@ classdef ForgePkgTester < handle
       "control"
     };
     known_bad_pkgs_test_linux = {
+      % Sometimes segfaults Octave in test
+      "control"
       % Crashes Octave in test
       "level-set"
     };
