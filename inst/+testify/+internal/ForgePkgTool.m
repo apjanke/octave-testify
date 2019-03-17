@@ -59,12 +59,12 @@ classdef ForgePkgTool < handle
       ## Check cache
       [tf, loc] = ismember (pkg_name, this.dependency_cache(:,1));
       if tf
-        say ("dep cache hit: %s", pkg_name);
+        # say ("dep cache hit: %s", pkg_name);
         out = this.dependency_cache{loc,2};
         return
       endif
       ## Cache miss: get from Forge
-      say ("dep cache miss: %s", pkg_name);
+      # say ("dep cache miss: %s", pkg_name);
       [url, local_file] = this.get_forge_download (pkg_name);
       if ! exist (local_file)
         say ("Downloading %s from %s", pkg_name, url);
@@ -132,13 +132,13 @@ classdef ForgePkgTool < handle
       path = {};
 
       function step (pkg_name)
-        fprintf ("\n");
-        fprintf ("step: %s\n", pkg_name);
-        fprintf ("path: %s\n", strjoin (path, " "));
-        fprintf ("install_order: %s\n", strjoin (install_order, " "));
-        fprintf ("requested: %s\n", strjoin (requested, " "));       
+        # fprintf ("\n");
+        # fprintf ("step: %s\n", pkg_name);
+        # fprintf ("path: %s\n", strjoin (path, " "));
+        # fprintf ("install_order: %s\n", strjoin (install_order, " "));
+        # fprintf ("requested: %s\n", strjoin (requested, " "));       
         if ismember (pkg_name, install_order)
-          fprintf ("already in install order: %s. skipping.\n", pkg_name);
+          # fprintf ("already in install order: %s. skipping.\n", pkg_name);
           return
         endif
         if ismember (pkg_name, path)
@@ -149,7 +149,7 @@ classdef ForgePkgTool < handle
         deps = this.direct_dependencies_for_package (pkg_name);
         for i = 1:numel (deps)
           dep = deps{i};
-          fprintf ("dep %d: %s\n", i, dep);
+          # fprintf ("dep %d: %s\n", i, dep);
           if ismember (dep, install_order)
             continue
           endif
@@ -163,7 +163,7 @@ classdef ForgePkgTool < handle
 
       while ! isempty (requested)
         [next_pkg, requested] = deal (requested{1}, requested(2:end));
-        fprintf ("requested is not empty. next_pkg = %s\n", next_pkg);
+        # fprintf ("requested is not empty. next_pkg = %s\n", next_pkg);
         step (next_pkg);
       endwhile
       out = install_order;

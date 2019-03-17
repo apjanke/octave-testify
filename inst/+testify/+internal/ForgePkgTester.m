@@ -7,20 +7,20 @@ classdef ForgePkgTester
   properties (Constant)
     known_bad_pkgs_test_mac = {
       % Crashes Octave in test
-      'control'
+      "control"
       % Crashes Octave in test
-      'octproj'
+      "octproj"
       % Crashes Octave in test
-      'quaternion'
+      "quaternion"
     }';
     known_bad_pkgs_test_windows = {};
     known_bad_pkgs_test_linux = {
       % Crashes Octave in test
-      'level-set'
+      "level-set"
     };
     my_impl_pkgs  = {
-      'testify'
-      'doctest'
+      "testify"
+      "doctest"
     }';
   endproperties
 
@@ -67,50 +67,50 @@ classdef ForgePkgTester
       else        
         this.known_bad_pkgs_test = testify.internal.ForgePkgTester.known_bad_pkgs_test_linux;
       endif
-      timestamp = datestr(now, 'yyyy-mm-dd_HH-MM-SS');
-      output_dir_base_name = ['octave-testify-ForgePkgTester-' timestamp];
+      timestamp = datestr(now, "yyyy-mm-dd_HH-MM-SS");
+      output_dir_base_name = ["octave-testify-ForgePkgTester-" timestamp];
       if isunix && ! ismac
         % Need to write to ~ to make results readily available under Flatpak
-        forge_tester_out_dir = fullfile (getenv ('HOME'), 'octave', 'testify', 'forge-tester');
+        forge_tester_out_dir = fullfile (getenv ("HOME"), "octave", "testify", "forge-tester");
         group_tmp_dir = forge_tester_out_dir;
       else
-        tmp_dir_parent = 'octave-testify-ForgePkgTester';
+        tmp_dir_parent = "octave-testify-ForgePkgTester";
         group_tmp_dir = fullfile (tempdir, tmp_dir_parent);
       endif
       mkdir (group_tmp_dir);
       this.output_dir = fullfile (group_tmp_dir, output_dir_base_name);
-      this.build_log_dir = fullfile (this.output_dir, 'build-logs');
-      this.tmp_run_dir = fullfile (tempdir, [output_dir_base_name '-run']);
+      this.build_log_dir = fullfile (this.output_dir, "build-logs");
+      this.tmp_run_dir = fullfile (tempdir, [output_dir_base_name "-run"]);
     endfunction
 
     function install_and_test_forge_pkgs (this)
       if (this.do_doctest)
-        pkg ('load', 'doctest');
+        pkg ("load", "doctest");
       endif
       mkdir (this.output_dir);
       mkdir (this.build_log_dir);
       if isempty (this.pkgs_to_test)
-        qualifier = 'all';
-        forge_pkgs = pkg ('-forge', 'list');
+        qualifier = "all";
+        forge_pkgs = pkg ("-forge", "list");
         this.pkgs_to_test = setdiff (forge_pkgs, this.known_bad_pkgs_install);
       else
-        qualifier = 'selected';
+        qualifier = "selected";
       endif
-      log_file = fullfile (this.output_dir, 'test_all_forge_pkgs.log');
+      log_file = fullfile (this.output_dir, "test_all_forge_pkgs.log");
       % Display log file at start so user can follow along in editor
-      fprintf ('Log file: %s\n', log_file);
-      fprintf ('\n');
+      fprintf ("Log file: %s\n", log_file);
+      fprintf ("\n");
       diary (log_file);
       diary on
       this.display_log_header;
       t0 = tic;
       unwind_protect
-        say ('Testing %s Forge packages', qualifier);
+        say ("Testing %s Forge packages", qualifier);
         pkgs_to_test = this.pkgs_to_test;
         % Force ordering for consistency
         pkgs_to_test = sort (pkgs_to_test);
-        say ('Testing packages: %s', strjoin(pkgs_to_test, ' '));
-        fprintf('\n');
+        say ("Testing packages: %s", strjoin(pkgs_to_test, " "));
+        fprintf("\n");
         for i_pkg = 1:numel (pkgs_to_test)
           this = this.install_and_test_forge_pkg (pkgs_to_test{i_pkg});
           this.pkgtool.uninstall_all_pkgs_except (this.my_impl_pkgs);
@@ -120,9 +120,9 @@ classdef ForgePkgTester
         this.test_elapsed_time = toc (t0);
         this.display_results;
         diary off
-        % Display log file again at end so it's easy to find when test run finishes
-        fprintf ('Log file: %s\n', log_file);
-        fprintf ('\n');
+        % Display log file again at end so it"s easy to find when test run finishes
+        fprintf ("Log file: %s\n", log_file);
+        fprintf ("\n");
       end_unwind_protect
     endfunction
     
@@ -137,7 +137,7 @@ classdef ForgePkgTester
     endfunction
 
     function this = install_and_test_forge_pkg (this, pkg_name)
-      if exist (this.tmp_run_dir, 'dir');
+      if exist (this.tmp_run_dir, "dir");
         rm_rf (this.tmp_run_dir);
       endif
       mkdir (this.tmp_run_dir);
@@ -155,15 +155,15 @@ classdef ForgePkgTester
         try
           file_droppings = this.find_file_droppings;
           if ! isempty (file_droppings)
-            fprintf ('\n');
-            fprintf ('File droppings were left by %s:\n', pkg_name);
+            fprintf ("\n");
+            fprintf ("File droppings were left by %s:\n", pkg_name);
             for i = 1:numel (file_droppings)
-              fprintf ('  %s\n', file_droppings{i});
+              fprintf ("  %s\n", file_droppings{i});
             endfor
-            fprintf ('\n');
+            fprintf ("\n");
           endif
         catch err
-          fprintf ('Error while detecting file droppings: %s\n', err.message);
+          fprintf ("Error while detecting file droppings: %s\n", err.message);
         end_try_catch
         cd (orig_pwd);
         rm_rf (this.tmp_run_dir);
@@ -171,11 +171,11 @@ classdef ForgePkgTester
     endfunction
   
     function this = install_and_test_forge_pkg_unsafe (this, pkg_name)
-      fprintf ('\n');
+      fprintf ("\n");
       pkg_ver = this.pkgtool.current_version_for_pkg (pkg_name);
-      say ('Doing Forge package %s %s', pkg_name, pkg_ver);
+      say ("Doing Forge package %s %s", pkg_name, pkg_ver);
       if ismember (pkg_name, this.known_bad_pkgs_install)
-        say ('Skipping install of known-bad package %s', pkg_name);
+        say ("Skipping install of known-bad package %s", pkg_name);
         this.skipped_pkgs_install{end+1} = pkg_name;
         return
       endif
@@ -184,19 +184,19 @@ classdef ForgePkgTester
       if ! isempty (deps)
         try
           t0 = tic;
-          say ('Installing dependencies for %s: %s', pkg_name, strjoin (deps, ' '));
-          this.pkgtool.pkg ('install', '-forge', deps{:});
+          say ("Installing dependencies for %s: %s", pkg_name, strjoin (deps, " "));
+          this.pkgtool.pkg ("install", "-forge", deps{:});
           te = toc (t0);
-          say ('Package installed (dependencies): %s. Elapsed time: %.1f s', pkg_name, te);
+          say ("Package installed (dependencies): %s. Elapsed time: %.1f s", pkg_name, te);
         catch err
-          say ('Error while installing package dependencies for %s: %s', ...
+          say ("Error while installing package dependencies for %s: %s", ...
             pkg_name, err.message);
           this.install_dependency_failures{end+1} = pkg_name;
           return;
         end_try_catch
       endif
       try
-        say ('Installing Forge package %s', pkg_name);
+        say ("Installing Forge package %s", pkg_name);
         flush_diary
         installer = testify.internal.ForgePkgInstaller;
         t0 = tic;
@@ -208,35 +208,35 @@ classdef ForgePkgTester
           if isempty (contents)
             continue
           endif
-          if ! exist (pkg_build_log_dir, 'dir')
+          if ! exist (pkg_build_log_dir, "dir")
             mkdir (pkg_build_log_dir);
           endif
           copyfile (rslt.log_dirs{i}, pkg_build_log_dir);
         endfor
         if ! rslt.success
-          error ('Package installation failed: %s. Error: %s', ...
+          error ("Package installation failed: %s. Error: %s", ...
             pkg_name, rslt.error_message);
         endif
-        say ('Package installed: %s. Elapsed time: %.1f s', pkg_name, te);
+        say ("Package installed: %s. Elapsed time: %.1f s", pkg_name, te);
       catch err
-        say ('Error while installing package %s: %s', ...
+        say ("Error while installing package %s: %s", ...
           pkg_name, err.message);
         this.install_failures{end+1} = pkg_name;
         return;
       end_try_catch
       if ismember (pkg_name, this.known_bad_pkgs_test)
-        say ('Skipping test of known-bad package %s', pkg_name);
+        say ("Skipping test of known-bad package %s", pkg_name);
         this.skipped_pkgs_test{end+1} = pkg_name;
         return
       endif
-      say ('Testing Forge package %s', pkg_name);
+      say ("Testing Forge package %s", pkg_name);
       try
-        nfailed = __test_pkgs__ (pkg_name, {'doctest', this.do_doctest});
+        nfailed = __test_pkgs__ (pkg_name, {"doctest", this.do_doctest});
         if nfailed > 0
           this.test_failures{end+1} = pkg_name;
         endif
       catch err
-        say ('Error while testing package %s: %s', ...
+        say ("Error while testing package %s: %s", ...
           pkg_name, err.message);
         this.test_failures{end+1} = pkg_name;
         return;        
@@ -245,99 +245,99 @@ classdef ForgePkgTester
     endfunction
     
     function out = my_safe_hostname (this)
-      [status, host] = system ('hostname 2>/dev/null');
+      [status, host] = system ("hostname 2>/dev/null");
       if status == 0
         out = chomp (host);
       else
-        out = 'unknown-host';
+        out = "unknown-host";
       endif
     endfunction
 
     function display_log_header (this)
       host = this.my_safe_hostname;
-      fprintf ('Tests run on %s at %s\n', host, datestr (now));
+      fprintf ("Tests run on %s at %s\n", host, datestr (now));
       ver
       if ismac
-        [status, sys_info] = system ('sw_vers');
-        fprintf ('macOS System Info:\n');
-        fprintf ('%s', sys_info);
-        [status, xcode_info] = system ('xcodebuild -version');
-        fprintf ('%s', xcode_info);
+        [status, sys_info] = system ("sw_vers");
+        fprintf ("macOS System Info:\n");
+        fprintf ("%s", sys_info);
+        [status, xcode_info] = system ("xcodebuild -version");
+        fprintf ("%s", xcode_info);
       endif
-      if isunix && exist ('/etc/os-release', 'file')
-        txt = fileread ('/etc/os-release');
-        fprintf ('Unix System Info (os-release):\n');
-        fprintf ('%s', txt);
+      if isunix && exist ("/etc/os-release", "file")
+        txt = fileread ("/etc/os-release");
+        fprintf ("Unix System Info (os-release):\n");
+        fprintf ("%s", txt);
       endif
       if ispc
-        [status, sys_info] = system ('systeminfo');
+        [status, sys_info] = system ("systeminfo");
         if status == 0
-          fprintf ('Windows System Info:\n');
-          fprintf ('%s', sys_info);
+          fprintf ("Windows System Info:\n");
+          fprintf ("%s", sys_info);
         endif
       endif
-      fprintf ('\n');
-      fprintf ('Environment Variables:\n');
+      fprintf ("\n");
+      fprintf ("Environment Variables:\n");
       env_var_displayer = testify.internal.EnvVarDisplayer;
       env_var_displayer.display_redacted_env_vars;
-      fprintf ('\n');
+      fprintf ("\n");
       if isunix
-        [status, lc_info] = system ('locale');
-        fprintf ('Locale:\n');
-        fprintf ('%s', lc_info);
-        fprintf ('\n');
+        [status, lc_info] = system ("locale");
+        fprintf ("Locale:\n");
+        fprintf ("%s", lc_info);
+        fprintf ("\n");
       endif
     endfunction
 
     function display_results (this)
       function print_pkgs_one_per_line (pkg_names)
         for i = 1:numel (pkg_names)
-          fprintf ('  %s\n', pkg_names{i});
+          fprintf ("  %s\n", pkg_names{i});
         endfor
       endfunction
-      fprintf ('\n');
-      fprintf ('\n');
-      fprintf ('========  PACKAGE INSTALL AND TEST RESULTS  ========\n');
-      fprintf ('\n');
-      fprintf ('Tested %d packages in %s\n', ...
+      fprintf ("\n");
+      fprintf ("\n");
+      fprintf ("========  PACKAGE INSTALL AND TEST RESULTS  ========\n");
+      fprintf ("\n");
+      fprintf ("Tested %d packages in %s\n", ...
         numel (this.tested_pkgs), seconds_to_mmss (this.test_elapsed_time));
-      fprintf ('Packages tested: %s\n', strjoin(this.tested_pkgs, ' '));
-      fprintf ('\n');
+      fprintf ("Packages tested: %s\n", strjoin(this.tested_pkgs, " "));
+      fprintf ("\n");
       if ! isempty (this.skipped_pkgs_install)
-        fprintf ('Skipped known-bad packages:\n');
+        fprintf ("Skipped known-bad packages:\n");
         print_pkgs_one_per_line (this.skipped_pkgs_install);
-        fprintf ('\n');
+        fprintf ("\n");
       endif
       if ! isempty (this.skipped_pkgs_test)
-        fprintf ('Skipped tests on known-bad packages:\n');
+        fprintf ("Skipped tests on known-bad packages:\n");
         print_pkgs_one_per_line (this.skipped_pkgs_test);
-        fprintf ('\n');
+        fprintf ("\n");
       endif
       if isempty (this.install_failures) && isempty (this.install_dependency_failures);
-        fprintf ('All packages installed OK.\n');
+        fprintf ("All packages installed OK.\n");
       else
         if ! isempty (this.install_dependency_failures)
-          fprintf ('Packages with failed dependency installations:\n');
+          fprintf ("Packages with failed dependency installations:\n");
           print_pkgs_one_per_line (this.install_dependency_failures);
-          fprintf ('\n');
+          fprintf ("\n");
         endif
         if ! isempty (this.install_failures)
-          fprintf ('Failed package installations:\n');
+          fprintf ("Failed package installations:\n");
           print_pkgs_one_per_line (this.install_failures);
-          fprintf ('\n');
+          fprintf ("\n");
         endif
       endif
       if isempty (this.test_failures)
-        fprintf ('All packages passed tests OK.\n');
+        fprintf ("All packages passed tests OK.\n");
       else
-        fprintf ('Failed package tests:\n');
+        fprintf ("Failed package tests:\n");
         print_pkgs_one_per_line (this.test_failures);
       endif
-      fprintf ('\n');
+      fprintf ("\n");
       if ! isempty (this.error_pkgs)
-        fprintf ('Internal errors occurred for these packages:\n');
+        fprintf ("Internal errors occurred for these packages:\n");
         print_pkgs_one_per_line (this.error_pkgs);
-        fprintf ('\n');
+        fprintf ("\n");
       endif
     endfunction
   endmethods
@@ -346,11 +346,11 @@ endclassdef
 
 function out = my_readdir (dir)
   out = readdir (dir);
-  out(ismember (out, {'.' '..'})) = [];
+  out(ismember (out, {"." ".."})) = [];
 endfunction
 
 function say (varargin)
-  fprintf ('%s: %s\n', 'testify.ForgePkgTester', sprintf (varargin{:}));
+  fprintf ("%s: %s\n", "testify.ForgePkgTester", sprintf (varargin{:}));
   flush_diary
 endfunction
 
@@ -362,7 +362,7 @@ function flush_diary
 endfunction
 
 function out = chomp (str)
-  out = regexprep (str, '\r?\n$', '');
+  out = regexprep (str, "\r?\n$", "");
 endfunction
 
 function rm_rf (file)
@@ -372,5 +372,5 @@ endfunction
 function out = seconds_to_mmss (sec)
   minutes = floor (sec / 60);
   seconds = round (sec - (minutes * 60));
-  out = sprintf ('%02d:%02d', minutes, seconds);
+  out = sprintf ("%02d:%02d", minutes, seconds);
 endfunction
