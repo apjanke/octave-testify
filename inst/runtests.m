@@ -21,6 +21,8 @@
 ## -*- texinfo -*-
 ## @deftypefn  {} {} runtests ()
 ## @deftypefnx {} {} runtests (@var{directory})
+## @deftypefnx {} {@var{success} =} runtests (@dots{})
+## @deftypefnx {} {[@var{success}, @var{__info__}] =} runtests (@dots{})
 ## Execute built-in tests for all m-files in the specified @var{directory}.
 ##
 ## Test blocks in any C++ source files (@file{*.cc}) will also be executed
@@ -28,12 +30,19 @@
 ##
 ## If no directory is specified, operate on all directories in Octave's search
 ## path for functions.
+##
+## When called with a single return value (@var{success}), return false if
+## there were any unexpected test failures, otherwise return true.  An extra
+## output argument returns detailed results of the test run.  The format of
+## this object is undocumented and subject to change at any time; it is
+## currently intended for Octave's internal use only.
+##
 ## @seealso{rundemos, test, path}
 ## @end deftypefn
 
 ## Author: jwe
 
-function rslts = runtests (directory)
+function [p, __info__] = runtests (directory)
 
   if (nargin == 0)
     dirs = ostrsplit (path (), pathsep ());
@@ -62,6 +71,12 @@ function rslts = runtests (directory)
     rslts += run_all_tests (d, do_class_dirs);
   endfor
 
+  if (nargout >= 1)
+    p = rslts.n_fail == 0;
+  endif
+  if (nargout == 2)
+    __info__ = rslts;
+  endif
 endfunction
 
 function out = parse_options (options, defaults)
