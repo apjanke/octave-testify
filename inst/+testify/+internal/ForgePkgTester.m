@@ -262,6 +262,11 @@ classdef ForgePkgTester
         [status, xcode_info] = system ('xcodebuild -version');
         fprintf ('%s', xcode_info);
       endif
+      if isunix && exist ('/etc/os-release', 'file')
+        txt = fileread ('/etc/os-release');
+        fprintf ('Unix System Info (os-release):\n');
+        fprintf ('%s', txt);
+      endif
       fprintf ('\n');
       fprintf ('Environment Variables:\n');
       env_var_displayer = testify.internal.EnvVarDisplayer;
