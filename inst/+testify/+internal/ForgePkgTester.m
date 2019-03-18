@@ -189,17 +189,18 @@ classdef ForgePkgTester < handle
     endfunction
 
     function install_dependency (this, pkg_name)
-      try
-        t0 = tic;
-        say ("Installing dependency: %s", pkg_name);
-        this.pkgtool.pkg ("install", "-forge", pkg_name);
-        te = toc (t0);
-        say ("Package installed (dependency): %s. Elapsed time: %.1f s", pkg_name, te);
-        this.deps_installed_ok{end+1} = pkg_name;
-      catch err
+      t0 = tic;
+      say ("Installing dependency: %s", pkg_name);
+      installer = testify.internal.ForgePkgInstaller;
+      rslt = installer.install (pkg_name);
+      if ! rslt.success
         say ("Package install failure (dependency): %s: %s\n", pkg_name, err.message);
         this.dep_install_failures{end+1} = pkg_name;
-      end_try_catch
+        return
+      endif
+      te = toc (t0);
+      say ("Package installed (dependency): %s. Elapsed time: %.1f s", pkg_name, te);
+      this.deps_installed_ok{end+1} = pkg_name;
     endfunction
 
     function install_and_test_forge_pkg (this, pkg_name)
@@ -264,21 +265,16 @@ classdef ForgePkgTester < handle
       flush_diary
       installer = testify.internal.ForgePkgInstaller;
       t0 = tic;
-      try
-        rslt = installer.install (pkg_name);
-        te = toc (t0);
-        this.capture_build_logs (pkg_name, rslt);
-        if ! rslt.success
-          error ("Package installation failed: %s. Error: %s", ...
-            pkg_name, rslt.error_message);
-        endif
-        say ("Package installed: %s. Elapsed time: %.1f s", pkg_name, te);
-      catch err
-        say ("Error while installing package %s: %s", ...
-          pkg_name, err.message);
+      rslt = installer.install (pkg_name);
+      te = toc (t0);
+      this.capture_build_logs (pkg_name, rslt);
+      if ! rslt.success
+        error ("Package installation failed: %s. Error: %s", ...
+          pkg_name, rslt.error_message);
         this.install_failures{end+1} = pkg_name;
-        return;
-      end_try_catch
+        return
+      endif
+      say ("Package installed: %s. Elapsed time: %.1f s", pkg_name, te);
       if ismember (pkg_name, this.known_bad_pkgs_test)
         say ("Skipping test of known-bad package %s", pkg_name);
         this.skipped_pkgs_test{end+1} = pkg_name;

@@ -1012,90 +1012,88 @@ function out = configure_make (desc, packdir, verbose)
   out.error_message = '';
   out.exception = [];
   
-  try
-    ## Perform ./configure, make, make install in "src".
-    if (isfolder (fullfile (packdir, "src")))
-      src = fullfile (packdir, "src");
-      octave_bindir = __octave_config_info__ ("bindir");
-      ver = version ();
-      ext = __octave_config_info__ ("EXEEXT");
-      mkoctfile_program = fullfile (octave_bindir, ...
-                                    sprintf ("mkoctfile-%s%s", ver, ext));
-      octave_config_program = fullfile (octave_bindir, ...
-                                        sprintf ("octave-config-%s%s", ver, ext));
-      if (ispc () && ! isunix ())
-        octave_binary = fullfile (octave_bindir, sprintf ("octave-%s.bat", ver));
-      else
-        octave_binary = fullfile (octave_bindir, sprintf ("octave-%s%s", ver, ext));
-      endif
+  ## Perform ./configure, make, make install in "src".
+  if (isfolder (fullfile (packdir, "src")))
+    src = fullfile (packdir, "src");
+    octave_bindir = __octave_config_info__ ("bindir");
+    ver = version ();
+    ext = __octave_config_info__ ("EXEEXT");
+    mkoctfile_program = fullfile (octave_bindir, ...
+                                  sprintf ("mkoctfile-%s%s", ver, ext));
+    octave_config_program = fullfile (octave_bindir, ...
+                                      sprintf ("octave-config-%s%s", ver, ext));
+    if (ispc () && ! isunix ())
+      octave_binary = fullfile (octave_bindir, sprintf ("octave-%s.bat", ver));
+    else
+      octave_binary = fullfile (octave_bindir, sprintf ("octave-%s%s", ver, ext));
+    endif
 
-      if (! exist (mkoctfile_program, "file"))
-        __gripe_missing_component__ ("pkg", "mkoctfile");
-      endif
-      if (! exist (octave_config_program, "file"))
-        __gripe_missing_component__ ("pkg", "octave-config");
-      endif
-      if (! exist (octave_binary, "file"))
-        __gripe_missing_component__ ("pkg", "octave");
-      endif
+    if (! exist (mkoctfile_program, "file"))
+      __gripe_missing_component__ ("pkg", "mkoctfile");
+    endif
+    if (! exist (octave_config_program, "file"))
+      __gripe_missing_component__ ("pkg", "octave-config");
+    endif
+    if (! exist (octave_binary, "file"))
+      __gripe_missing_component__ ("pkg", "octave");
+    endif
 
-      if (verbose)
-        mkoctfile_program = [mkoctfile_program " --verbose"];
+    if (verbose)
+      mkoctfile_program = [mkoctfile_program " --verbose"];
+    endif
+
+    cenv = {"MKOCTFILE"; mkoctfile_program;
+            "OCTAVE_CONFIG"; octave_config_program;
+            "OCTAVE"; octave_binary};
+    scenv = sprintf ("%s='%s' ", cenv{:});
+
+    ## Configure.
+    if (exist (fullfile (src, "configure"), "file"))
+      flags = "";
+      if (isempty (getenv ("CC")))
+        flags = [flags ' CC="' mkoctfile("-p", "CC") '"'];
       endif
-
-      cenv = {"MKOCTFILE"; mkoctfile_program;
-              "OCTAVE_CONFIG"; octave_config_program;
-              "OCTAVE"; octave_binary};
-      scenv = sprintf ("%s='%s' ", cenv{:});
-
-      ## Configure.
-      if (exist (fullfile (src, "configure"), "file"))
-        flags = "";
-        if (isempty (getenv ("CC")))
-          flags = [flags ' CC="' mkoctfile("-p", "CC") '"'];
-        endif
-        if (isempty (getenv ("CXX")))
-          flags = [flags ' CXX="' mkoctfile("-p", "CXX") '"'];
-        endif
-        if (isempty (getenv ("AR")))
-          flags = [flags ' AR="' mkoctfile("-p", "AR") '"'];
-        endif
-        if (isempty (getenv ("RANLIB")))
-          flags = [flags ' RANLIB="' mkoctfile("-p", "RANLIB") '"'];
-        endif
-        cmd = ["cd '" src "'; " scenv "./configure " flags];
-        [status, output] = shell (cmd, verbose);
-        spew (fullfile (log_dir, 'configure.log'), output);
-        if (status != 0)
-          rmdir (desc.dir, "s");
-          disp (output);
-          error ("pkg: error running the configure script for %s.", desc.name);
-        endif
+      if (isempty (getenv ("CXX")))
+        flags = [flags ' CXX="' mkoctfile("-p", "CXX") '"'];
       endif
-
-      ## Make.
-      if (ispc ())
-        jobs = 1;
-      else
-        jobs = nproc ("overridable");
+      if (isempty (getenv ("AR")))
+        flags = [flags ' AR="' mkoctfile("-p", "AR") '"'];
       endif
-
-      if (exist (fullfile (src, "Makefile"), "file"))
-        [status, output] = shell (sprintf ("%s make --jobs %i --directory '%s'",
-                                           scenv, jobs, src), verbose);
-        spew (fullfile (log_dir, 'make.log'), output);
-        if (status != 0)
-          rmdir (desc.dir, "s");
-          disp (output);
-          error ("pkg: error running `make' for the %s package.", desc.name);
-        endif
+      if (isempty (getenv ("RANLIB")))
+        flags = [flags ' RANLIB="' mkoctfile("-p", "RANLIB") '"'];
+      endif
+      cmd = ["cd '" src "'; " scenv "./configure " flags];
+      [status, output] = shell (cmd, verbose);
+      spew (fullfile (log_dir, 'configure.log'), output);
+      if (status != 0)
+        rmdir (desc.dir, "s");
+        disp (output);
+        out = struct ("success", false, "exception", [], ...
+          "error_message", sprintf("pkg: error running the configure script for %s.", desc.name));
+        return
       endif
     endif
-  catch err
-    out.success = false;
-    out.error_message = err.message;
-    out.exception = err;
-  end_try_catch
+
+    ## Make.
+    if (ispc ())
+      jobs = 1;
+    else
+      jobs = nproc ("overridable");
+    endif
+
+    if (exist (fullfile (src, "Makefile"), "file"))
+      [status, output] = shell (sprintf ("%s make --jobs %i --directory '%s'",
+                                         scenv, jobs, src), verbose);
+      spew (fullfile (log_dir, 'make.log'), output);
+      if (status != 0)
+        rmdir (desc.dir, "s");
+        disp (output);
+        out = struct ("success", false, "exception", [], ...
+          "error_message", sprintf("pkg: error running `make' for the %s package.", desc.name));
+        return
+      endif
+    endif
+  endif
 endfunction
 
 ## Executes a shell command.
