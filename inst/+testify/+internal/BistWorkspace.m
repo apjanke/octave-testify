@@ -32,12 +32,28 @@ classdef BistWorkspace < handle
 
   methods
     function this = BistWorkspace (vars)
+      if nargin == 0
+        return
+      endif
       if ! iscellstr (vars)
         error ("BistWorkspace: vars must be a cellstr; got a %s", class (vars));
       endif
-      this.vars = vars;
+      this.add_vars (vars);
+    endfunction
+
+    function add_vars (this, vars)
+      %ADD_VARS Add new variables to this workspace
+      vars = cellstr (vars);
       for i = 1:numel (vars)
-        this.workspace.(vars{i}) = [];
+        if ! isvarname (vars{i})
+          error ("BistWorkspace.add_vars: invalid variable name: '%s'", vars{i});
+        endif
+      endfor
+      for i = 1:numel (vars)
+        if ! ismember (vars{i}, this.vars)
+          this.vars{end+1} = vars{i};
+          this.workspace.(vars{i}) = [];
+        endif
       endfor
     endfunction
 
