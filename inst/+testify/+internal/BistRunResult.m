@@ -46,10 +46,10 @@ classdef BistRunResult
   
   properties (Dependent = true)
     % Count of tests that failed for any reason
-    n_fail = 0
+    n_fail
     % Count of failures that were not xfails, skips, or regressions
     % n_really_fail = n_fail - n_skip - n_xfail - n_xfail_bug - n_regression
-    n_really_fail = 0    
+    n_really_fail
   end
   
   methods
