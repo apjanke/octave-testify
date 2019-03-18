@@ -1,0 +1,8 @@
+
+# Pre-5.1.0 compatibility shims for Octave
+
+inst_dir = fileparts (mfilename ("fullpath"));
+
+if compare_versions (version, "5.0.0", "<")
+  addpath (fullfile (inst_dir, "shims", "pre-5.0"));
+endif
