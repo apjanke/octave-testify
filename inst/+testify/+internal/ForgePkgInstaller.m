@@ -32,7 +32,7 @@ classdef ForgePkgInstaller
       %   * Captures build logs
       args = cellstr (varargin);
       install_args = [{'install' '-forge'} args];
-      say (strjoin (install_args, ' '));
+      say ("%s", strjoin (install_args, ' '));
       result = pkg_install (install_args{:});
       out = result;
     endfunction
