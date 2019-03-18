@@ -23,7 +23,7 @@
 ## @deftypefn  {} {} __test_pkgs__
 ## @deftypefnx {} {} __test_pkgs__ @var{pkg_name}
 ## @deftypefnx {} {} __test_pkgs__ (@var{pkg_names}, @var{options})
-## @deftypefnx {} {@var{nfailed} =} __test_pkgs__ (@dots{})
+## @deftypefnx {} {@var{success} =} __test_pkgs__ (@dots{})
 ## @deftypefnx {} {[@var{nfailed}, @var{__info__}] =} __test_pkgs__ (@dots{})
 ## Run tests for packages
 ##
@@ -55,7 +55,11 @@
 ##
 ## @end table
 ##
-## Returns the total number of test failures.
+## If one argout is captured, returns a logical indicating whether all tests
+## passed.
+##
+## If two argouts are captured, the first argout is a count of the number
+## of failed tests.
 ##
 ## If the second argout, @var{__info__}, is specified, it returns an
 ## object holding detailed results of the test run.  The format of this
@@ -194,6 +198,8 @@ function nfailed = __test_pkgs__ (pkg_names, options)
 
   if (nargout == 0)
     clear nfailed
+  elseif (nargout == 1)
+    nfailed = nfailed == 0;
   endif
 endfunction
 
