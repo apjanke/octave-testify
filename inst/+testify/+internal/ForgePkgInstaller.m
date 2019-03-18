@@ -210,7 +210,7 @@ function out = install_private_impl (files, handle_deps, prefix, archprefix, ver
     warning ("creating installation directory %s", prefix);
     [status, msg] = mkdir (prefix);
     if (status != 1)
-      error ("could not create installation directory: %s", msg);
+      error ("could not create installation directory %s: %s", prefix, msg);
     endif
   endif
 
