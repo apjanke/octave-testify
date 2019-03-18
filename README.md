@@ -44,8 +44,8 @@ pkg load testify
   * `pkg install -forge doctest`
 * Clone the repo.
   * `git clone https://github.com/apjanke/octave-testify`
-* Run `make install` in a shell.
-* Lather, rinse, and repeat each time you make changes to any of the source code.
+* Add its `inst` directory to the Octave path
+  * `addpath ("/path/to/my/cloned/octave-testify/inst")`
 
 ### Usage
 
