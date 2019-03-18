@@ -213,14 +213,9 @@ classdef ForgePkgTester < handle
       endif
       mkdir (this.tmp_run_dir);
       orig_pwd = pwd;
+      cd (this.tmp_run_dir);
       unwind_protect
-        cd (this.tmp_run_dir);
-        try
-          this = install_and_test_forge_pkg_unsafe (this, pkg_name);
-        catch err
-          % Internal error
-          this.error_pkgs{end+1} = pkg_name;
-        end_try_catch
+        this = install_and_test_forge_pkg_unsafe (this, pkg_name);
       unwind_protect_cleanup
         this.tested_pkgs{end+1} = pkg_name;
         file_droppings = this.find_file_droppings;
