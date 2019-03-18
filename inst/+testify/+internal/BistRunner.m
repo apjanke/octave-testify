@@ -29,11 +29,87 @@ classdef BistRunner < handle
     output_mode = "normal"
     % File handle this is writing output to. Might be stdout.
     fid = [];
+    % Whether to run demo blocks when running tests
+    run_demo = false;
   endproperties
 
   properties (Dependent)
     verbose
   endproperties
+
+  methods (Static)
+    function file = locate_test_file (name, verbose, fid)
+      # Locates file to run tests on for a name.
+      # If not found, emits a diagnostic message about tests-not-found.
+      #
+      # inputs:
+      #   name - file to search for, loosely defined. The name is the string
+      #          that is passed in to the test2 function.
+      #   verbose - whether to print diagnostic messages to fid when file is not found.
+      #          Defaults to false.
+      #   fid - file id to write progress messages to. Uses stdout if omitted.
+      # outputs:
+      #   file - full path to located file, including extension (charvec). Empty
+      #     if file was not found.
+      if nargin < 2 || isempty (verbose);  verbose = false;  endif
+      if nargin < 3 || isempty (fid)
+        fid = stdout;
+      endif
+
+      file = file_in_loadpath (name, "all");
+      if ! isempty (file)
+        return
+      endif
+      file = file_in_loadpath ([name ".m"], "all");
+      if ! isempty (file)
+        return
+      endif
+      file = file_in_loadpath ([name ".cc"], "all");
+      if ! isempty (file)
+        return
+      endif
+      testsdir = __octave_config_info__ ("octtestsdir");
+      candidates = {
+        fullfile(testsdir, name)
+        fullfile(testsdir, [name "-tst"])
+        fullfile(testsdir, [name ".cc-tst"])
+        fullfile(testsdir, [name ".in.yy-tst"])
+      };
+      for i = 1:numel (candidates)
+        if exist (candidates{i}, "file")
+          file = candidates{i};
+          break
+        endif
+      endfor
+      if (iscell (file))
+        if (isempty (file))
+          file = "";
+        else
+          file = file{1};  # If there are duplicates, pick the first in path. 
+        endif
+      endif
+      if ! isempty (file)
+        return
+      endif
+      if (verbose)
+        ftype = exist (name);
+        if (ftype == 3)
+          fprintf (fid, "%s%s source code with tests for dynamically linked function not found\n", ...
+            "????? ", name);
+        elseif (ftype == 5)
+          fprintf (fid, "%s%s is a built-in function\n", ...
+            "????? ", name);
+        elseif (any (strcmp (__operators__ (), name)))
+          fprintf (fid, "%s%s is an operator\n", ...
+            "????? ", name);
+        else
+          fprintf (fid, "%s%s does not exist in path\n", ...
+            "????? ", name);
+        endif
+        fflush (fid);
+      endif    
+    endfunction
+  endmethods
 
   methods
     function this = BistRunner (file)
@@ -91,8 +167,17 @@ classdef BistRunner < handle
       this.fid = [];
     endfunction
 
+    function out = extract_demo_code (this)
+    endfunction
+
     function out = run_tests (this)
       %RUN_TESTS Run the tests found in this file
+      persistent signal_fail  = "!!!!! ";
+      persistent signal_empty = "????? ";
+      persistent signal_block = "***** ";
+      persistent signal_file  = ">>>>> ";
+      persistent signal_skip  = "----- ";
+
       this.start_output;
       RAII.out_file = onCleanup (@() this.end_output);
       out = testify.internal.BistRunResult;
@@ -103,11 +188,10 @@ classdef BistRunner < handle
       	this.emit ("%s????? %s has no tests\n", this.file);
       	return
       endif
-      test_code_blocks = this.split_test_code_into_blocks (test_code);
-
       if this.verbose
         fprintf (">>>>> %s\n", this.file);
       endif
+      blocks = this.parse_test_code (test_code);
 
       # Track leaked resources
       fid_list_orig = fopen ("all");
@@ -116,39 +200,81 @@ classdef BistRunner < handle
 
       all_success = true;
 
-      for i_block = 1:numel (test_code_blocks)
-        block_contents = test_code_blocks{i_block};
-        if this.verbose > 0
-          this.emit ("***** %s\n", block_contents);
-        endif
-        block = this.parse_test_code_block (block_contents);
+      workspace = testify.internal.BistWorkspace;
+      rslt = testify.internal.BistRunResult;
+      functions_to_clear = {};
 
+      for i_block = 1:numel (blocks)
+        block = blocks(i_block);
         ok = true;
         msg = [];
-        istest = false;
-        isxtest = false;
-        bug_id = "";
-        fixed_bug = false;
 
         switch block.type
+          case "test"
+            try
+              workspace.eval (code);
+            catch err
+              if isempty (lasterr ())
+                error ("test: empty error text, probably Ctrl-C --- aborting");
+              endif
+              success = false;
+              if block.is_xtest
+                if isempty (block.bug_id)
+                  if (block.fixed_bug)
+                    rslt.n_regression += 1;
+                    msg = "regression";
+                  else
+                    rslt.n_xfail += 1;
+                    msg = "known failure";
+                  endif
+                else
+                  bug_id_display = block.bug_id;
+                  if (all (isdigit (block.bug_id)))
+                    bug_id_display = ["https://octave.org/testfailure/?" __bug_id];
+                  endif
+                  if (block.fixed_bug)
+                    rslt.n_regression += 1;
+                    msg = ["regression: " bug_id_display];
+                  else
+                    rslt.n_xfail_bug += 1;
+                    msg = ["known bug: " bug_id_display];
+                  endif
+                endif
+              else
+                msg = "test failed";
+              endif
+              msg = [signal_fail msg "\n" lasterr()];
+            end_try_catch
           case "shared"
-            % A "shared" block declares shared variables, plus some arbitrary code
-            shared_defn = this.parse_shared_block (block.code);
-            % Those variables are then persisted in a workspace through
-            % subsequent test executions
-            code = shared_defn.code;
+            workspace.add_vars (block.vars);
           case "function"
-            % A "function" block dynamically defines a function. I guess it's a 
-            % global function? -apj
-            % TODO: Eval the function definition
-            % TODO: Queue up code to clear that function
-            code = "";
+            try
+              eval (block.code);
+              functions_to_clear{end+1} = block.function_name;
+            catch err
+              ok = false;
+              msg = [signal_fail "test failed: syntax error in function definition\n" err.message];
+            end_try_catch
           case "endfunction"
-            % This is a dummy block left over from closing a function block. Ignore.
-            code = "";
+            % NOP
+          case "demo"
+            % Each demo gets evaled in its own workspace, with no shared variables
+            demo_ws = testify.internal.BistWorkspace;
+            try
+              demo_ws.eval (block.code);
+            catch err
+              ok = false;
+              msg = [signal_fail "demo failed\n" err.message];
+            end_try_catch
           case { "assert", "fail" }
+          case "error"
+          case "warning"
         endswitch
 
+        if block.is_test
+          rslt.n_test += 1;
+          rslt.n_pass += success;
+        endif
       endfor
 
     endfunction
@@ -172,6 +298,13 @@ classdef BistRunner < handle
     endfunction
 
     function out = split_test_code_into_blocks (this, test_code)
+      ## Add a dummy comment block to the end for ease of indexing.
+      if (test_code(end) == "\n")
+        test_code = ["\n" test_code "#"];
+      else
+        test_code = ["\n" test_code "\n#"];
+      endif
+      ## Chop it up into blocks for evaluation.
 	    out = {};
 	    ix_line = find (test_code == "\n");
 	    ix_block = ix_line(find (! isspace (test_code(ix_line + 1)))) + 1;
@@ -180,7 +313,18 @@ classdef BistRunner < handle
 	    endfor
     endfunction
 
+    function out = parse_test_code (this, test_code)
+      % Parses the test code, returning BistBlock array
+      block_txts = this.split_test_code_into_blocks (test_code);
+      out = repmat (testify.internal.BistBlock, [0 0]);
+      for i = 1:numel (block_txts)
+        out(i) = this.parse_test_code_block (block_txts{i});
+      end
+    endfunction
+
     function out = parse_test_code_block (this, block)
+      out = testify.internal.BistBlock;
+
       ix = find (! isletter (block));
       if isempty (ix)
         out.type = block;
@@ -196,6 +340,9 @@ classdef BistRunner < handle
 
       # Type-specific parsing
       switch out.type
+        case "demo"
+          out.code = contents;
+
         case "shared"
           # Separate initialization code from variables
           # vars are the first line; code is the remaining lines
