@@ -17,7 +17,7 @@
 ## <https://www.gnu.org/licenses/>.
 
 classdef BistRunResult
-  %BISTRUNRESULT The result of running BIST tests on one or more files.
+  %BISTRUNRESULT The aggregate result of running BIST tests on one or more files.
   
   properties
     % Count of total tests run
@@ -34,6 +34,8 @@ classdef BistRunResult
     n_skip_feature = 0
     % Count of tests that weres skipped due to run-time conditions
     n_skip_runtime = 0
+    % List of files that were processed
+    files_processed = {}
     % List of files that had tests (cellstr row vector)
     files_with_tests = {}
     % List of files that had no tests (cellstr row vector)
@@ -107,6 +109,7 @@ classdef BistRunResult
       out.n_xfail = A.n_xfail + B.n_xfail;
       out.n_skip_feature = A.n_skip_feature + B.n_skip_feature;
       out.n_skip_runtime = A.n_skip_runtime + B.n_skip_runtime;
+      out.files_processed = unique([A.files_processed B.files_processed]);
       out.files_with_tests = unique([A.files_with_tests B.files_with_tests]);
       out.files_with_no_tests = unique([A.files_with_no_tests B.files_with_no_tests]);
       out.failed_files = unique([A.failed_files B.failed_files]);
