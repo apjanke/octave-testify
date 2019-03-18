@@ -19,10 +19,10 @@
 ## <https://www.gnu.org/licenses/>.
 
 ## -*- texinfo -*-
-## @deftypefn  {} {} runtests ()
-## @deftypefnx {} {} runtests (@var{directory})
-## @deftypefnx {} {@var{success} =} runtests (@dots{})
-## @deftypefnx {} {[@var{success}, @var{__info__}] =} runtests (@dots{})
+## @deftypefn  {} {} runtests2 ()
+## @deftypefnx {} {} runtests2 (@var{directory})
+## @deftypefnx {} {@var{success} =} runtests2 (@dots{})
+## @deftypefnx {} {[@var{success}, @var{__info__}] =} runtests2 (@dots{})
 ## Execute built-in tests for all m-files in the specified @var{directory}.
 ##
 ## Test blocks in any C++ source files (@file{*.cc}) will also be executed
@@ -42,7 +42,7 @@
 
 ## Author: jwe
 
-function [p, __info__] = runtests (directory)
+function [p, __info__] = runtests2 (directory)
 
   if (nargin == 0)
     dirs = ostrsplit (path (), pathsep ());
@@ -56,7 +56,7 @@ function [p, __info__] = runtests (directory)
       endif
       fullname = dir_in_loadpath (directory);
       if (isempty (fullname))
-        error ("runtests: DIRECTORY argument must be a valid pathname");
+        error ("runtests2: DIRECTORY argument must be a valid pathname");
       endif
       dirs = {fullname};
     endif
@@ -65,7 +65,7 @@ function [p, __info__] = runtests (directory)
     print_usage ();
   endif
 
-  rslts = octave.test.internal.BistRunResult;
+  rslts = testify.internal.BistRunResult;
   for i = 1:numel (dirs)
     d = dirs{i};
     rslts += run_all_tests (d, do_class_dirs);
@@ -89,7 +89,7 @@ function out = parse_options (options, defaults)
     options = s;
   endif
   if (! isstruct (options))
-    error ("options must be a struct or name/val cell vector");
+    error ("runtests2: options must be a struct or name/val cell vector");
   endif
   opt_fields = fieldnames (options);
   for i = 1:numel (opt_fields)
@@ -101,7 +101,7 @@ endfunction
 
 function rslts = run_all_tests (directory, do_class_dirs)
 
-  rslts = octave.test.internal.BistRunResult;
+  rslts = testify.internal.BistRunResult;
   flist = readdir (directory);
   dirs = {};
   printf ("Processing files in %s:\n\n", directory);
@@ -113,7 +113,7 @@ function rslts = run_all_tests (directory, do_class_dirs)
       ff = fullfile (directory, f);
       if (has_tests (ff))
         print_test_file_name (f);
-        [~, rslt] = test (ff, "quiet");
+        [~, rslt] = test2 (ff, "quiet");
         print_pass_fail (rslt);
         rslts += rslt;
         fflush (stdout);
@@ -147,7 +147,7 @@ function retval = has_functions (f)
   if (n > 3 && strcmpi (f((end-2):end), ".cc"))
     fid = fopen (f);
     if (fid < 0)
-      error ("runtests: fopen failed: %s", f);
+      error ("runtests2: fopen failed: %s", f);
     endif
     str = fread (fid, "*char")';
     fclose (fid);
@@ -164,7 +164,7 @@ endfunction
 function retval = has_tests (f)
   fid = fopen (f);
   if (fid < 0)
-    error ("runtests: fopen failed: %s", f);
+    error ("runtests2: fopen failed: %s", f);
   endif
 
   str = fread (fid, "*char").';
@@ -205,5 +205,5 @@ function print_test_file_name (nm)
 endfunction
 
 
-%!error runtests ("foo", 1)
-%!error <DIRECTORY argument> runtests ("#_TOTALLY_/_INVALID_/_PATHNAME_#")
+%!error runtests2 ("foo", 1)
+%!error <DIRECTORY argument> runtests2 ("#_TOTALLY_/_INVALID_/_PATHNAME_#")

@@ -18,26 +18,26 @@
 ## <https://www.gnu.org/licenses/>.
 
 ## -*- texinfo -*-
-## @deftypefn  {} {} test @var{name}
-## @deftypefnx {} {} test @var{name} quiet|normal|verbose
-## @deftypefnx {} {} test ("@var{name}", "quiet|normal|verbose", @var{fid})
-## @deftypefnx {} {} test ("@var{name}", "quiet|normal|verbose", @var{fname})
-## @deftypefnx {} {@var{success}, @var{__rslt__} =} test (@dots{})
-## @deftypefnx {} {[@var{n}, @var{nmax}, @var{nxfail}, @var{nbug}, @var{nskip}, @var{nrtskip}, @var{nregression}] =} test (@dots{})
-## @deftypefnx {} {[@var{code}, @var{idx}] =} test ("@var{name}", "grabdemo")
-## @deftypefnx {} {} test ([], "explain", @var{fid})
-## @deftypefnx {} {} test ([], "explain", @var{fname})
+## @deftypefn  {} {} test2 @var{name}
+## @deftypefnx {} {} test2 @var{name} quiet|normal|verbose
+## @deftypefnx {} {} test2 ("@var{name}", "quiet|normal|verbose", @var{fid})
+## @deftypefnx {} {} test2 ("@var{name}", "quiet|normal|verbose", @var{fname})
+## @deftypefnx {} {@var{success}, @var{__rslt__} =} test2 (@dots{})
+## @deftypefnx {} {[@var{n}, @var{nmax}, @var{nxfail}, @var{nbug}, @var{nskip}, @var{nrtskip}, @var{nregression}] =} test2 (@dots{})
+## @deftypefnx {} {[@var{code}, @var{idx}] =} test2 ("@var{name}", "grabdemo")
+## @deftypefnx {} {} test2 ([], "explain", @var{fid})
+## @deftypefnx {} {} test2 ([], "explain", @var{fname})
 ##
 ## Perform built-in self-tests from the first file in the loadpath matching
 ## @var{name}.
 ##
-## @code{test} can be called in either command or functional form.  The exact
-## operation of test is determined by a combination of mode (interactive or
+## @code{test2} can be called in either command or functional form.  The exact
+## operation of test2 is determined by a combination of mode (interactive or
 ## batch), reporting level (@qcode{"quiet"}, @qcode{"normal"},
 ## @qcode{"verbose"}), and whether a logfile or summary output variable is
 ## used.
 ##
-## The default mode when @code{test} is called from the command line is
+## The default mode when @code{test2} is called from the command line is
 ## interactive.  In this mode, tests will be run until the first error is
 ## encountered, or all tests complete successfully.  In batch mode, all tests
 ## are run regardless of any failures, and the results are collected for
@@ -88,11 +88,11 @@
 ##
 ## @example
 ## @group
-## test sind
+## test2 sind
 ## @result{}
 ## PASSES 5 out of 5 tests
 ##
-## [n, nmax] = test ("sind")
+## [n, nmax] = test2 ("sind")
 ## @result{}
 ## n =  5
 ## nmax =  5
@@ -108,17 +108,17 @@
 ## extract demo blocks from files, @xref{XREFexample,,example}.
 ##
 ## If the second argument is @qcode{"explain"} then @var{name} is ignored and
-## an explanation of the line markers used in @code{test} output reports is
+## an explanation of the line markers used in @code{test2} output reports is
 ## written to the file specified by @var{fname} or @var{fid}.
 ##
-## @seealso{assert, fail, demo, example, error}
+## @seealso{test, assert, fail, demo, example, error}
 ## @end deftypefn
 
-## Programming Note: All variables for test() must use the internal prefix "__".
+## Programming Note: All variables for test2() must use the internal prefix "__".
 ## Shared variables are eval'ed into the current workspace and therefore might
 ## collide with the names used in the test.m function itself.
 
-function varargout = test (__name, __flag = "normal", __fid = [])
+function varargout = test2 (__name, __flag = "normal", __fid = [])
 
   ## Output from test is prefixed by a "key" to quickly understand the issue.
   persistent __signal_fail  = "!!!!! ";
@@ -131,9 +131,9 @@ function varargout = test (__name, __flag = "normal", __fid = [])
   if (nargin < 1 || nargin > 3)
     print_usage ();
   elseif (! isempty (__name) && ! ischar (__name))
-    error ("test: NAME must be a string");
+    error ("test2: NAME must be a string");
   elseif (! ischar (__flag))
-    error ("test: second argument must be a string");
+    error ("test2: second argument must be a string");
   elseif (isempty (__name) && (nargin != 3 || ! strcmp (__flag, "explain")))
     print_usage ();
   endif
@@ -147,7 +147,7 @@ function varargout = test (__name, __flag = "normal", __fid = [])
       __log_fname = __fid;
       [__fid, __msg] = fopen (__log_fname, "wt");
       if (__fid < 0)
-        error ("test: could not open log file %s: %s", __log_fname, __msg);
+        error ("test2: could not open log file %s: %s", __log_fname, __msg);
       endif
       __cleanup.logfile = onCleanup (@() fclose(__fid));
     endif
@@ -195,7 +195,7 @@ function varargout = test (__name, __flag = "normal", __fid = [])
     emit (__fid, "# success (in which case no error will be reported).\n");
     return;
   else
-    error ("test: unknown flag '%s'", __flag);
+    error ("test2: unknown flag '%s'", __flag);
   endif
 
   ## Locate the file to test.
@@ -682,20 +682,20 @@ function varargout = test (__name, __flag = "normal", __fid = [])
 
   ## Verify test file did not leak file descriptors.
   if (! isempty (setdiff (fopen ("all"), __fid_list_orig)))
-    warning ("test: file %s leaked file descriptors\n", __file);
+    warning ("test2: file %s leaked file descriptors\n", __file);
   endif
 
   ## Verify test file did not leak variables in to base workspace.
   __leaked_vars = setdiff (evalin ("base", "who"), __base_variables_orig);
   if (! isempty (__leaked_vars))
-    warning ("test: file %s leaked variables to base workspace:%s\n",
+    warning ("test2: file %s leaked variables to base workspace:%s\n",
              __file, sprintf (" %s", __leaked_vars{:}));
   endif
 
   ## Verify test file did not leak global variables.
   __leaked_vars = setdiff (who ("global"), __global_variables_orig);
   if (! isempty (__leaked_vars))
-    warning ("test: file %s leaked global variables:%s\n",
+    warning ("test2: file %s leaked global variables:%s\n",
              __file, sprintf (" %s", __leaked_vars{:}));
   endif
 
@@ -741,7 +741,7 @@ function varargout = test (__name, __flag = "normal", __fid = [])
     __nskip = __xskip;
     __nrtskip = __xrtskip;
     __nregression = __xregression;
-    __rslt = octave.test.internal.BistRunResult(__n, __nmax, __nxfail, __nbug, ...
+    __rslt = testify.internal.BistRunResult(__n, __nmax, __nxfail, __nbug, ...
       __nskip, __nrtskip, __nregression);
     __rslt.files_with_tests{end+1} = __file;
     if (__rslt.n_really_fail > 2)
@@ -930,6 +930,9 @@ function body = __extract_test_code (file)
   endif
 endfunction
 
+## Developer's note: Most of these tests don't actually test test2, since
+## they're designed to work with Octave's BIST functionality, which will 
+## implicitly call test(), not test2().
 
 ## example from toeplitz
 %!shared msg1,msg2
@@ -971,19 +974,19 @@ endfunction
 %! assert (kron (A, B), res);
 %!shared  # clear out shared variables
 
-## Now verify test() itself
+## Now verify test2() itself
 
 ## Test 'fail' keyword
-%!fail ("test", "Invalid call to test")  # no args, generates usage()
-%!fail ("test (1,2,3,4)", "usage.*test") # too many args, generates usage()
-%!fail ('test ("test", "invalid")', "unknown flag")  # incorrect args
+%!fail ("test2", "Invalid call to test2")  # no args, generates usage()
+%!fail ("test2 (1,2,3,4)", "usage.*test") # too many args, generates usage()
+%!fail ('test2 ("test", "invalid")', "unknown flag")  # incorrect args
 %!fail ('garbage','garbage.*undefined')  # usage on nonexistent function should be
 
 ## Test 'error' keyword
-%!error test              # no args, generates usage()
-%!error test (1,2,3,4)    # too many args, generates usage()
-%!error <unknown flag> test ("test", "invalid"); # incorrect args
-%!error test ("test", "invalid");  # test without pattern
+%!error test2              # no args, generates usage()
+%!error test2 (1,2,3,4)    # too many args, generates usage()
+%!error <unknown flag> test2 ("test", "invalid"); # incorrect args
+%!error test2 ("test", "invalid");  # test without pattern
 %!error <'garbage' undefined> garbage; # usage on nonexistent function is error
 
 ## Test 'warning' keyword
@@ -1043,7 +1046,7 @@ endfunction
 %!demo a=3                  # single line demo blocks work too
 
 %!test
-%! [code, idx] = test ("test", "grabdemo");
+%! [code, idx] = test2 ("test", "grabdemo");
 %! assert (numel (idx), 4);
 %! assert (code(idx(3):end),
 %!         " a=3                  # single line demo blocks work too");
@@ -1064,10 +1067,10 @@ endfunction
 %! and it stays as a comment even through continuation lines
 %! which means that it works well with commenting out whole tests
 
-## Test test() input validation
-%!error <NAME must be a string> test (1)
-%!error <second argument must be a string> test ("ls", 1)
-%!error test ([], "normal")
+## Test test2() input validation
+%!error <NAME must be a string> test2 (1)
+%!error <second argument must be a string> test2 ("ls", 1)
+%!error test2 ([], "normal")
 
 ## All of the following tests should fail.  These tests should
 ## be disabled unless you are developing test() since users don't

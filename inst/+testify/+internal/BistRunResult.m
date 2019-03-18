@@ -94,9 +94,10 @@ classdef BistRunResult
       % count values are additive. The file lists are combined by setwise union.
       %
       % Returns a BistRunResult.
-      klass = "octave.test.internal.BistRunResult";
+      klass = "testify.internal.BistRunResult";
       if ! isa (A, klass) || ! isa (B, klass)
-        error ("Both inputs must be a %s", klass);
+        error ("Both inputs must be a %s; got a %s and a %s", ...
+          klass, class (A), class (B));
       endif
       out = A;
       out.n_test = A.n_test + B.n_test;

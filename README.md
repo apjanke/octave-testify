@@ -20,8 +20,8 @@ See files in the `doc-project` directory for more documentation.
 
 ### Non-Goals
 
-Testify does _not_ implement [Matlab's unit test framework](https://www.mathworks.com/help/matlab/matlab-unit-test-framework.html), or attempt to be compatible with it.
-This is just a “richer” way of doing Octave's current BIST tests, using its existing data model.
+Testify does _not_ implement [Matlab’s unit test framework](https://www.mathworks.com/help/matlab/matlab-unit-test-framework.html), or attempt to be compatible with it.
+This is just a “richer” way of doing Octave’s current BIST tests, using its existing data model.
 
 If you _are_ interested in seeing a clone of xUnit or Matlab’s unit test framework, go [add a comment on Issue #5](https://github.com/apjanke/octave-testify/issues/5) to indicate your interest.
 If enough people want it, I’ll try to make it happen.
@@ -72,8 +72,10 @@ Just ignore it.
 
 Then, call one of Testify’s functions:
 
-* `__run_test_suite__` - just like Octave's regular `__run_test_suite__`, but with (IMHO) nicer output.
+* `test2` – a replacement for Octave’s regular `test`, with slight enhancements
+* `__run_test_suite2__` - just like Octave’s regular `__run_test_suite__`, but with (IMHO) nicer output.
 * `__test_pkgs__` – a new function for running tests on installed `pkg` packages.
+* `testify.install_and_test_forge_pkgs` – tests Forge packages
 
 ## What's In Here
 
@@ -83,7 +85,9 @@ It's all in the root namespace, expected to shadow existing core Octave code.
 #### Externally Visible
 
 <dl>
-<dt><code>__run_test_suite__</code></dt>
+<dt><code>test2</code></dt
+<dd>A replacement for Octave’s current <code>test</code>. Nothing special about it just yet.</dd>
+<dt><code>__run_test_suite2__</code></dt>
 <dd>A replacement for Octave’s current <code>__run_test_suite__</code>.
 Nothing much new here; just internal changes to support the <code>BistRunResult</code> abstraction.</dd>
 <dt><code>__test_pkgs__</code></dt>
@@ -98,7 +102,7 @@ For use in Continuous Integration or automated testing environments.</dd>
 #### Internal Changes
 
 <dl>
-<dt><code>BistRunResult</code></dt>
+<dt><code>testify.internal.BistRunResult</code></dt>
 <dd>An object that collects the various counters and lists associated with BIST run results.
 This is a replacement for the current technique of managing a half dozen primitive variables in parallel.
 </dd>
@@ -106,7 +110,7 @@ This is a replacement for the current technique of managing a half dozen primiti
 
 ## Authors
 
-Testify is written and maintained by [Andrew Janke](https://github.com/apjanke).
+Testify is primarily written and maintained by [Andrew Janke](https://github.com/apjanke).
 
 ## Acknowledgments
 

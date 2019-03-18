@@ -18,15 +18,15 @@
 ## <https://www.gnu.org/licenses/>.
 
 ## -*- texinfo -*-
-## @deftypefn  {} {} __run_test_suite__ (@var{fcndirs}, @var{fixedtestdirs})
-## @deftypefnx {} {} __run_test_suite__ (@var{fcndirs}, @var{fixedtestdirs}, @var{topsrcdir}, @var{topbuilddir})
+## @deftypefn  {} {} __run_test_suite2__ (@var{fcndirs}, @var{fixedtestdirs})
+## @deftypefnx {} {} __run_test_suite2__ (@var{fcndirs}, @var{fixedtestdirs}, @var{topsrcdir}, @var{topbuilddir})
 ## Undocumented internal function.
 ## @end deftypefn
 
 ## varargout signature:
-## rslts = __run_test_suite__ (...)
-## [pass, fail, xfail, xbug, skip, rtskip, regress, failed_files] = __run_test_suite__ (...)
-function varargout = __run_test_suite__ (fcndirs, fixedtestdirs, topsrcdir = [], topbuilddir = [])
+## rslts = __run_test_suite2__ (...)
+## [pass, fail, xfail, xbug, skip, rtskip, regress, failed_files] = __run_test_suite2__ (...)
+function varargout = __run_test_suite2__ (fcndirs, fixedtestdirs, topsrcdir = [], topbuilddir = [])
 
   t0 = tic;
   testsdir = __octave_config_info__ ("octtestsdir");
@@ -61,11 +61,11 @@ function varargout = __run_test_suite__ (fcndirs, fixedtestdirs, topsrcdir = [],
     warning ("on", "quiet");
     warning ("off", "Octave:deprecated-function");
     warning ("off", "Octave:legacy-function");
-    rslts = octave.test.internal.BistRunResult;
+    rslts = testify.internal.BistRunResult;
     try
       fid = fopen (logfile, "wt");
       if (fid < 0)
-        error ("__run_test_suite__: could not open %s for writing", logfile);
+        error ("__run_test_suite2__: could not open %s for writing", logfile);
       endif
       test ("", "explain", fid);
       puts ("\nIntegrated test scripts:\n\n");
@@ -172,7 +172,7 @@ endfunction
 function rslts = run_test_dir (fid, d, is_fixed, topbuilddir, topsrcdir)
 
   lst = dir (d);
-  rslts = octave.test.internal.BistRunResult;
+  rslts = testify.internal.BistRunResult;
   for i = 1:length (lst)
     nm = lst(i).name;
     if (lst(i).isdir && nm(1) != "." && ! strcmp (nm, "private"))
@@ -293,7 +293,7 @@ function retval = has_functions (f)
   if (n > 3 && strcmpi (f((end-2):end), ".cc"))
     fid = fopen (f);
     if (fid < 0)
-      error ("__run_test_suite__: fopen failed: %s", f);
+      error ("__run_test_suite2__: fopen failed: %s", f);
     endif
     str = fread (fid, "*char")';
     fclose (fid);
@@ -311,7 +311,7 @@ function retval = has_tests (f)
 
   fid = fopen (f);
   if (fid < 0)
-    error ("__run_test_suite__: fopen failed: %s", f);
+    error ("__run_test_suite2__: fopen failed: %s", f);
   endif
 
   str = fread (fid, "*char")';
