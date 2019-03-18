@@ -198,6 +198,7 @@ function rslts = run_test_dir (fid, d, is_fixed, topbuilddir, topsrcdir)
           || (is_fixed && length (nm) > 4 && strcmpi (nm((end-3):end), ".tst")))
         p = n = xf = xb = sk = rtsk = rgrs = 0;
         ffnm = fullfile (d, nm);
+        rslt.files_processed{end+1} = ffnm;
         ## Only run if contains %!test, %!assert, %!error, %!fail, or %!warning
         if (has_tests (ffnm))
           tmp = reduce_test_file_name (ffnm, topbuilddir, topsrcdir);
@@ -206,8 +207,6 @@ function rslts = run_test_dir (fid, d, is_fixed, topbuilddir, topsrcdir)
           rslt.files_with_tests{end+1} = ffnm;
           print_pass_fail (rslt);
           rslts = rslts + rslt;
-        else
-          rslts.files_with_no_tests{end+1} = ffnm;
         endif
       endif
     endfor

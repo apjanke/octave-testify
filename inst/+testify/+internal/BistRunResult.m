@@ -38,8 +38,6 @@ classdef BistRunResult
     files_processed = {}
     % List of files that had tests (cellstr row vector)
     files_with_tests = {}
-    % List of files that had no tests (cellstr row vector)
-    files_with_no_tests = {}
     % List of files with failed tests (cellstr row vector)
     failed_files = {}
   endproperties
@@ -50,6 +48,8 @@ classdef BistRunResult
     % Count of failures that were not xfails, skips, or regressions
     % n_really_fail = n_fail - n_skip - n_xfail - n_xfail_bug - n_regression
     n_really_fail
+    % List of files that had no tests (cellstr row vector)
+    files_with_no_tests
   end
   
   methods
@@ -88,6 +88,10 @@ classdef BistRunResult
     function out = get.n_really_fail (this)
       out = this.n_fail - this.n_xfail - this.n_xfail_bug - this.n_regression;
     endfunction
+
+    function out = get.files_with_no_tests (this)
+      out = setdiff (this.files_processed, files_with_tests);
+    endfunction
     
     function out = plus(A, B)
       %PLUS Combine results
@@ -111,7 +115,6 @@ classdef BistRunResult
       out.n_skip_runtime = A.n_skip_runtime + B.n_skip_runtime;
       out.files_processed = unique([A.files_processed B.files_processed]);
       out.files_with_tests = unique([A.files_with_tests B.files_with_tests]);
-      out.files_with_no_tests = unique([A.files_with_no_tests B.files_with_no_tests]);
       out.failed_files = unique([A.failed_files B.failed_files]);
     endfunction
     
