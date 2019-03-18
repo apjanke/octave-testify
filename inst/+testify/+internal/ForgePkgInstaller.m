@@ -27,6 +27,9 @@ classdef ForgePkgInstaller
     function out = install (this, varargin)
       %INSTALL Replacement for `pkg -forge install`
       %
+      % Returns a result code instead of throwing errors in the case of some
+      % package installation failures. You need to check the return status.
+      %
       % This is a replacement for `pkg -forge install` that does the same thing, except
       % it also:
       %   * Captures build logs
