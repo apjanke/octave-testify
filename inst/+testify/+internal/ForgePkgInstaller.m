@@ -1068,8 +1068,8 @@ function out = configure_make (desc, packdir, verbose)
       if (status != 0)
         rmdir (desc.dir, "s");
         disp (output);
-        out = struct ("success", false, "exception", [], ...
-          "error_message", sprintf("pkg: error running the configure script for %s.", desc.name));
+        out.success = false;
+        out.error_message = sprintf("pkg: error running the configure script for %s.", desc.name);
         return
       endif
     endif
@@ -1088,8 +1088,8 @@ function out = configure_make (desc, packdir, verbose)
       if (status != 0)
         rmdir (desc.dir, "s");
         disp (output);
-        out = struct ("success", false, "exception", [], ...
-          "error_message", sprintf("pkg: error running `make' for the %s package.", desc.name));
+        out.success = false;
+        out.error_message = sprintf("pkg: error running `make' for the %s package.", desc.name);
         return
       endif
     endif
