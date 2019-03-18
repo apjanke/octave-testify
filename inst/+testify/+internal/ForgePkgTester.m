@@ -296,19 +296,12 @@ classdef ForgePkgTester < handle
       endif
       % Test
       say ("Testing Forge package %s", pkg_name);
-      try
-        nfailed = __test_pkgs__ (pkg_name, {"doctest", this.do_doctest});
-        if nfailed > 0
-          this.test_failures{end+1} = pkg_name;
-        else
-          this.test_passes{end+1} = pkg_name;
-        endif
-      catch err
-        say ("Error while testing package %s: %s", ...
-          pkg_name, err.message);
+      nfailed = __test_pkgs__ (pkg_name, {"doctest", this.do_doctest});
+      if nfailed > 0
         this.test_failures{end+1} = pkg_name;
-        return;        
-      end_try_catch
+      else
+        this.test_passes{end+1} = pkg_name;
+      endif
       flush_diary
     endfunction
     
