@@ -159,6 +159,10 @@ classdef ForgePkgTester < handle
         this.pkgtool.uninstall_all_pkgs_except (this.my_impl_pkgs);
         for i_pkg = 1:numel (this.install_order)
           pkg = this.install_order{i_pkg};
+          if ismember (pkg, this.my_impl_pkgs)
+            say ("Skipping Testify implementation package %s", pkg);
+            continue
+          endif
           if ismember (pkg, this.pkgs_to_test)
             this.install_and_test_forge_pkg (pkg);
           else
