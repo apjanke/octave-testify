@@ -184,10 +184,185 @@ classdef BistRunner < handle
       ix = find (! isletter (block));
       if isempty (ix)
         out.type = block;
-        out.code = "";
+        contents = "";
       else
         out.type = block(1:ix(1)-1);
-        out.code = block(ix(1):end);
+        contents = block(ix(1):end);
+      endif
+      out.contents = contents;
+      out.is_valid = true;
+      out.error_message = "";
+      out.is_test = false;
+
+      # Type-specific parsing
+      switch out.type
+        case "shared"
+          # Separate initialization code from variables
+          # vars are the first line; code is the remaining lines
+          ix = find (contents == "\n");
+          if isempty (ix)
+            vars = contents;
+            code = "";
+          else
+            vars = contents(1:ix(1)-1);
+            code = contents(ix(1):end);
+          endif
+
+          # Strip comments from variables line
+          ix = find (vars == "%" | vars == "#");
+          if ! isempty (ix)
+            vars = vars(1:ix(1)-1);
+          endif
+          vars = regexp (vars, "\s+", "split");
+          out.vars = vars;
+          out.code = code;
+
+        case "function"
+          ix_fcn_name = find_function_name (contents);
+          if (isempty (ix_fcn_name))
+            out.is_valid = false;
+            out.error_message = "missing function name";
+          else
+            out.function_name = contents(ix_fcn_name(1):ix_fcn_name(2));
+            out.code = contents;
+          endif
+
+        case "endfunction"
+          # No additional contents
+
+        case {"assert", "fail"}
+          [bug_id, rest, fixed] = this.find_bugid_in_assert (contents);
+          out.is_test = true;
+          out.is_xtest = ! isempty (bug_id);
+          out.bug_id = bug_id;
+          out.code = [out.type contents];
+
+        case {"error", "warning"}
+          out.is_test = true;
+          out.is_warning = isequal (out.type, "warning");
+          [pattern, id, code] = this.find_pattern (contents);
+          if (id)
+            pat_str = ["id=" id];
+          else
+            if ! strcmp (pattern, ".")
+              pat_str = ["<" pattern ">"];
+            else
+              pat_str = ifelse (out.is_warning, "a warning", "an error");
+            endif
+          endif
+          out.pattern = pattern;
+          out.pat_str = pat_str;
+          out.id = id;
+          out.code = code;
+
+        case "testif"
+          e = regexp (contents, ".$", "lineanchors", "once");
+          ## Strip any comment and bug-id from testif line before
+          ## looking for features
+          feat_line = strtok (contents(1:e), '#%');
+          ix1 = index (feat_line, "<");
+          if ix1
+            tmp = feat_line(ix1+1:end);
+            ix2 = index (tmp, ">");
+            if (ix2)
+              bug_id = tmp(1:ix2-1);
+              if (strncmp (bug_id, "*", 1))
+                bug_id = bug_id(2:end);
+                fixed_bug = true;
+              endif
+              feat_line = feat_line(1:ix1-1);
+            endif
+          endif
+          ix = index (feat_line, ";");
+          if (ix)
+            runtime_feat_test = feat_line(ix+1:end);
+            feat_line = feat_line(1:ix-1);
+          else
+            runtime_feat_test = "";
+          endif
+          feat = regexp (feat_line, '\w+', 'match');
+          feat = strrep (feat, "HAVE_", "");
+
+        case "test"
+          [bug_id, code, fixed_bug] = this.find_bugid_in_assert (contents);
+          out.bug_id = bug_id;
+          out.fixed_bug = fixed_bug;
+          out.is_test = true;
+          out.is_xtest = ! isempty (bug_id);
+          out.code = code;
+
+        case "xtest"
+          [bug_id, code, fixed_bug] = this.find_bugid_in_assert (contents);
+          out.is_test = true;
+          out.is_xtest = true;
+          out.code = code;
+
+        case "#"
+          # Comment block
+
+        default
+          # Unrecognized block type: no further parsing
+          # But treat it as a test!?!?
+          out.is_test = true;
+          out.code = "";
+      endswitch
+    endfunction
+
+    function out = find_function_name (this, def)
+      pos = [];
+
+      ## Find the end of the name.
+      right = find (def == "(", 1);
+      if (isempty (right))
+        return;
+      endif
+      right = find (def(1:right-1) != " ", 1, "last");
+
+      ## Find the beginning of the name.
+      left = max ([find(def(1:right)==" ", 1, "last"), ...
+                   find(def(1:right)=="=", 1, "last")]);
+      if (isempty (left))
+        return;
+      endif
+      left += 1;
+
+      ## Return the end points of the name.
+      pos = [left, right];
+    endfunction
+
+    function [bug_id, rest, fixed] = find_bugid_in_assert (this, str)
+      bug_id = "";
+      rest = str;
+      fixed = false;
+
+      str = trimleft (str);
+      if (! isempty (str) && str(1) == "<")
+        close = index (str, ">");
+        if (close)
+          bug_id = str(2:close-1);
+          if (strncmp (bug_id, "*", 1))
+            bug_id = bug_id(2:end);
+            fixed = true;
+          endif
+          rest = str(close+1:end);
+        endif
+      endif
+    endfunction
+
+    function [pattern, id, rest] = find_pattern (this, str)
+      pattern = ".";
+      id = [];
+      rest = str;
+      str = trimleft (str);
+      if (! isempty (str) && str(1) == "<")
+        close = index (str, ">");
+        if (close)
+          pattern = str(2:close-1);
+          rest = str(close+1:end);
+        endif
+      elseif (strncmp (str, "id=", 3))
+        [id, rest] = strtok (str(4:end));
+      endif
     endfunction
 
     function out = parse_shared_block (code)
