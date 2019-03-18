@@ -38,27 +38,6 @@ pkg install https://github.com/apjanke/octave-testify/releases/download/v0.2.0/t
 pkg load testify
 ```
 
-#### “Shadowed function” warnings are fine
-
-When you install or load Testify, you will get warnings about it shadowing core library functions.
-
-```
-octave:3> pkg install https://github.com/apjanke/octave-testify/archive/master.zip
-warning: function /home/janke/octave/testify-0.2.0/runtests.m shadows a core library function
-warning: function /home/janke/octave/testify-0.2.0/__run_test_suite__.m shadows a core library function
-warning: function /home/janke/octave/testify-0.2.0/test.m shadows a core library function
-octave:5> pkg load testify
-warning: function /home/janke/octave/testify-0.2.0/runtests.m shadows a core library function
-warning: called from
-    load_packages_and_dependencies at line 48 column 5
-    load_packages at line 47 column 3
-    pkg at line 457 column 7
-[...]
-```
-
-This is expected, and fine.
-Just ignore it.
-
 ### Installation for development
 
 * Install the `doctest` package
