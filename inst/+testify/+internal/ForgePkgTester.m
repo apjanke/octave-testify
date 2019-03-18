@@ -306,7 +306,7 @@ classdef ForgePkgTester < handle
         if ! exist (pkg_build_log_dir, "dir")
           mkdir (pkg_build_log_dir);
         endif
-        copyfile (build_rslt.log_dirs{i}, pkg_build_log_dir);
+        copyfile ([build_rslt.log_dirs{i} "/*"], pkg_build_log_dir);
       endfor    
     endfunction
     
