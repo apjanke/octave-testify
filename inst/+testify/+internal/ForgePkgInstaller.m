@@ -357,7 +357,9 @@ function out = install_private_impl (files, handle_deps, prefix, archprefix, ver
 
     ## Did we find any unsatisfied dependencies?
     if (! ok)
-      error ("the following dependencies were unsatisfied:\n  %s", error_text);
+      out.success = false;
+      out.error_message = sprintf ("the following dependencies were unsatisfied:\n  %s", error_text);
+      return
     endif
   endif
 
@@ -379,6 +381,9 @@ function out = install_private_impl (files, handle_deps, prefix, archprefix, ver
     endfor
   catch
     ## Something went wrong, delete tmpdirs.
+    % TODO: This no longer works with our non-exception-based error handling
+    % Convert all this tmpdir cleanup code to onCleanup or unwind_protect
+    % instead of catch blocks.
     for i = 1:length (tmpdirs)
       rmdir (tmpdirs{i}, "s");
     endfor
