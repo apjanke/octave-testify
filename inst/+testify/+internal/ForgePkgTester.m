@@ -260,24 +260,14 @@ classdef ForgePkgTester < handle
         endif
       endif
       % Install
+      say ("Installing Forge package %s", pkg_name);
+      flush_diary
+      installer = testify.internal.ForgePkgInstaller;
+      t0 = tic;
       try
-        say ("Installing Forge package %s", pkg_name);
-        flush_diary
-        installer = testify.internal.ForgePkgInstaller;
-        t0 = tic;
         rslt = installer.install (pkg_name);
         te = toc (t0);
-        pkg_build_log_dir = fullfile (this.build_log_dir, pkg_name);
-        for i = 1:numel (rslt.log_dirs)
-          contents = my_readdir (rslt.log_dirs{i});
-          if isempty (contents)
-            continue
-          endif
-          if ! exist (pkg_build_log_dir, "dir")
-            mkdir (pkg_build_log_dir);
-          endif
-          copyfile (rslt.log_dirs{i}, pkg_build_log_dir);
-        endfor
+        this.capture_build_logs (pkg_name, rslt);
         if ! rslt.success
           error ("Package installation failed: %s. Error: %s", ...
             pkg_name, rslt.error_message);
@@ -303,6 +293,21 @@ classdef ForgePkgTester < handle
         this.test_passes{end+1} = pkg_name;
       endif
       flush_diary
+    endfunction
+
+    function capture_build_logs (this, pkg_name, build_rslt)
+      pkg_build_log_dir = fullfile (this.build_log_dir, pkg_name);
+      for i = 1:numel (build_rslt.log_dirs)
+        contents = my_readdir (build_rslt.log_dirs{i});
+        if isempty (contents)
+          say ("No build logs for %s", pkg_name)
+          continue
+        endif
+        if ! exist (pkg_build_log_dir, "dir")
+          mkdir (pkg_build_log_dir);
+        endif
+        copyfile (build_rslt.log_dirs{i}, pkg_build_log_dir);
+      endfor    
     endfunction
     
     function out = my_safe_hostname (this)
