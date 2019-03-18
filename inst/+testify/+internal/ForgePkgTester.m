@@ -269,7 +269,7 @@ classdef ForgePkgTester < handle
       te = toc (t0);
       this.capture_build_logs (pkg_name, rslt);
       if ! rslt.success
-        error ("Package installation failed: %s. Error: %s", ...
+        say ("Package installation failed: %s. Error: %s", ...
           pkg_name, rslt.error_message);
         this.install_failures{end+1} = pkg_name;
         return
