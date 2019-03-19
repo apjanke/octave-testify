@@ -258,11 +258,11 @@ classdef BistRunner < handle
                   [success, rslt, msg] = run_test_code (this, block, workspace, rslt);
                 else
                   rslt.n_skip_runtime += 1;
-                  msg = [signal_skip "skipped test (runtime test)\n"];
+                  msg = [signal_skip "skipped test (runtime test)"];
                 endif
               else
                 rslt.n_skip_feature += 1;
-                msg = [signal_skip "skipped test (missing feature)\n"];
+                msg = [signal_skip "skipped test (missing feature)"];
               endif
 
             case "shared"
@@ -586,6 +586,7 @@ classdef BistRunner < handle
           ## looking for features
           feat_line = strtok (contents(1:e), '#%');
           out.feature_line = feat_line;
+          contents_rest = contents(e+1:end);
           ix1 = index (feat_line, "<");
           if ix1
             tmp = feat_line(ix1+1:end);
@@ -609,6 +610,7 @@ classdef BistRunner < handle
           feat = regexp (feat_line, '\w+', 'match');
           feat = strrep (feat, "HAVE_", "");
           out.feature = feat;
+          out.code = contents_rest;
 
         case "test"
           [bug_id, code, fixed_bug] = this.find_bugid_in_assert (contents);
