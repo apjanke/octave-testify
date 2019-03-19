@@ -178,6 +178,20 @@ classdef MultiBistRunner < handle
 
     function add_octave_builtins (this)
       % Add the tests for all the Octave builtins
+      testsdir = __octave_config_info__ ("octtestsdir");
+      libinterptestdir = fullfile (testsdir, "libinterp");
+      liboctavetestdir = fullfile (testsdir, "liboctave");
+      fcnfiledir = __octave_config_info__ ("fcnfiledir");
+      fcndirs = { liboctavetestdir, libinterptestdir, fcnfiledir };
+      fixedtestdir = fullfile (testsdir, "fixed");
+      fixedtestdirs = { fixedtestdir };
+
+      for i = 1:numel (fcndirs)
+        this.add_directory (fcndirs{i});
+      endfor
+      for i = 1:numel (fixedtestdirs)
+        this.add_directory (fixedtestdirs{i});
+      endfor
     endfunction
 
     function out = run_tests (this)

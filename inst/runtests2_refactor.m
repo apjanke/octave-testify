@@ -44,6 +44,7 @@
 ##   -function <name>     - Test a function
 ##   -pkg <name>          - Test an installed pkg package
 ##   -search-path         - Test everything on the Octave search path
+##   -octave-builtins     - Test Octave's interpreter and built-in functions
 ##
 ## Namespaces are not yet supported for function and class names.
 ##
@@ -90,6 +91,8 @@ function [p, __info__] = runtests2_refactor (varargin)
         runner.add_class (t.item);
       case "pkg"
         runner.add_package (t.item);
+      case "octave_builtins"
+        runner.add_octave_builtins;
       otherwise
         error ("Unsupported target type: %s", t.type);
     endswitch
@@ -137,6 +140,9 @@ function out = parse_inputs (args)
         i += 2;
       case "-search-path"
         out.targets = [out.targets target("search_path", [])];
+        i += 1;
+      case "-octave-builtins"
+        out.targets = [out.targets target("octave_builtins", [])];
         i += 1;
       case ""
         error ("runtests2: empty string is not a valid argument");

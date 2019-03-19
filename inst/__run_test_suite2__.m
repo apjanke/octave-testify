@@ -32,13 +32,13 @@ function varargout = __run_test_suite2__ (fcndirs, fixedtestdirs, topsrcdir = []
   testsdir = __octave_config_info__ ("octtestsdir");
   libinterptestdir = fullfile (testsdir, "libinterp");
   liboctavetestdir = fullfile (testsdir, "liboctave");
-  fixedtestdir = fullfile (testsdir, "fixed");
   fcnfiledir = __octave_config_info__ ("fcnfiledir");
   if (nargin < 1)
     fcndirs = { liboctavetestdir, libinterptestdir, fcnfiledir };
   else
     fcndirs = cellstr (fcndirs);
   endif
+  fixedtestdir = fullfile (testsdir, "fixed");
   if (nargin < 2)
     fixedtestdirs = { fixedtestdir };
   else
