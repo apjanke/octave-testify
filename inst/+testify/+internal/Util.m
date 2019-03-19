@@ -62,3 +62,7 @@ classdef Util
   endmethods
 
 endclassdef
+
+function out = chomp (str)
+  out = regexprep (str, "\r?\n$", "");
+endfunction

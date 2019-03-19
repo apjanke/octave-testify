@@ -279,6 +279,5 @@ function out = chomp (str)
   out = regexprep (str, "\r?\n$", "");
 endfunction
 
-
 %!error runtests2 ("foo", 1)
 %!error <DIRECTORY argument> runtests2 ("#_TOTALLY_/_INVALID_/_PATHNAME_#")

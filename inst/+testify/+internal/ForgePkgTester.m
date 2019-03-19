@@ -118,7 +118,9 @@ classdef ForgePkgTester < handle
         this.known_bad_pkgs_test = testify.internal.ForgePkgTester.known_bad_pkgs_test_linux;
       endif
       timestamp = datestr(now, "yyyy-mm-dd_HH-MM-SS");
-      output_dir_base_name = ["octave-testify-ForgePkgTester-" timestamp];
+      host = testify.internal.Util.safe_hostname;
+      os_name = testify.internal.Util.os_name;
+      output_dir_base_name = ["testify-forge-" host "-" os_name "-" timestamp];
       if isunix && ! ismac
         % Need to write to ~ to make results readily available under Flatpak
         forge_tester_out_dir = fullfile (getenv ("HOME"), "octave", "testify", "forge-tester");
