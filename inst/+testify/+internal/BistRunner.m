@@ -33,6 +33,8 @@ classdef BistRunner < handle
     fid = [];
     % Whether to run demo blocks when running tests
     run_demo = false;
+    % If true, will abort the test run immediately upon any failure
+    fail_fast = false;
   endproperties
 
   properties (Dependent)
@@ -190,7 +192,13 @@ classdef BistRunner < handle
       out.ixs = demo_blocks_ix;
     endfunction
 
-    function out = run_tests (this)
+    function fprintf_verbose (this, varargin)
+      if this.verbose > 0
+        fprintf (varargin{:});
+      endif
+    endfunction
+
+    function [out, info] = run_tests (this)
       %RUN_TESTS Run the tests found in this file
       persistent signal_fail  = "!!!!! ";
       persistent signal_empty = "????? ";
@@ -208,9 +216,7 @@ classdef BistRunner < handle
       	this.emit ("%s????? %s has no tests\n", this.file);
       	return
       endif
-      if this.verbose > 0
-        fprintf (">>>>> %s\n", this.file);
-      endif
+      this.fprintf_verbose (">>>>> %s\n", this.file);
       blocks = this.parse_test_code (test_code);
 
       # Get initial state for tracking and cleanup
@@ -232,9 +238,8 @@ classdef BistRunner < handle
           success = true;
           msg = [];
 
-          if this.verbose > 0
-            fprintf ("%s %s (%d)\n%s\n", signal_block, block.type, block.index, block.code);
-          endif
+          this.fprintf_verbose ("%s %s (block #%d)\n%s\n", ...
+            signal_block, block.type, block.index, block.code);
 
           switch block.type
 
@@ -329,13 +334,14 @@ classdef BistRunner < handle
 
           endswitch
 
-          if this.verbose > 0
-            fprintf ("  -> success=%d, msg=%s\n", success, msg);
-          endif
+          this.fprintf_verbose ("  -> success=%d, msg=%s\n", success, msg);
 
           if block.is_test
             rslt.n_test += 1;
             rslt.n_pass += success;
+          endif
+          if this.fail_fast && ! success
+            break
           endif
         endfor
       unwind_protect_cleanup
@@ -363,6 +369,7 @@ classdef BistRunner < handle
       endif
 
       out = rslt;
+      info = struct;
 
     endfunction
 

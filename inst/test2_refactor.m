@@ -23,8 +23,7 @@
 ## -*- texinfo -*-
 ## @deftypefn  {} {} test2 @var{name}
 ## @deftypefnx {} {} test2 @var{name} quiet|normal|verbose
-## @deftypefnx {} {} test2 ("@var{name}", "quiet|normal|verbose", @var{fid})
-## @deftypefnx {} {} test2 ("@var{name}", "quiet|normal|verbose", @var{fname})
+## @deftypefnx {} {} test2 ("@var{name}", @dots{})
 ## @deftypefnx {} {@var{success}, @var{__rslt__} =} test2 (@dots{})
 ## @deftypefnx {} {[@var{n}, @var{nmax}, @var{nxfail}, @var{nbug}, @var{nskip}, @var{nrtskip}, @var{nregression}] =} test2 (@dots{})
 ## @deftypefnx {} {[@var{code}, @var{idx}] =} test2 ("@var{name}", "grabdemo")
@@ -81,11 +80,23 @@
 ## processing, but still print the results to the screen, use @code{stdout} for
 ## @var{fid}.
 ##
+## Arguments 2 and later are parsed as options. Valid options:
+##
+##   quiet
+##   normal
+##   verbose
+##   -fail-fast        - Abort the test run immediately after any failure (default)
+##   -no-fail-fast     - Do not abort the test run upon failures
+##   -log-file <file>  - A file name to write result log output to
+##   -log-fid <fid>    - An fid to write result log output to
+##
 ## When called with output arguments (and not in @qcode{"grabdemo"} or @qcode{"explain"}
 ## mode), returns the following outputs:
 ##   @code{success} - True if all tests passed, false otherwise
 ##   @code{__rslt__} - An object holding results data. The format of this object
 ##                     is undocumented and subject to change at any time.
+##   @code{__info__} - A struct or object of other info about the test run. The format
+##                       of this object is undocumented and subject to change at any time.
 ##
 ## Example
 ##
@@ -117,7 +128,7 @@
 ## @seealso{test, assert, fail, demo, example, error}
 ## @end deftypefn
 
-function varargout = test2_refactor (name, flag = "normal", fid = [])
+function varargout = test2_refactor (name, varargin)
 
   ## Output from test is prefixed by a "key" to quickly understand the issue.
   persistent signal_fail  = "!!!!! ";
@@ -127,13 +138,11 @@ function varargout = test2_refactor (name, flag = "normal", fid = [])
   persistent signal_skip  = "----- ";
 
   ## Parse inputs
-  if (nargin < 1 || nargin > 3)
-    print_usage ();
-  elseif (isempty (name) && (nargin != 3 || ! strcmp (flag, "explain")))
+  if nargin < 1
     print_usage ();
   endif
 
-  opts = parse_args (name, flag, fid);
+  opts = parse_args (name, varargin);
   if ! isempty (opts.log_fname)
     fid = fopen2 (log_fname, "wt");
     RAII.logfile = onCleanup (@() fclose(fid));
@@ -143,7 +152,7 @@ function varargout = test2_refactor (name, flag = "normal", fid = [])
 
   ## Special-case behaviors
 
-  if isequal (opts.flag, "explain")
+  if isequal (opts.mode, "explain")
     emit_output_explanation (fid);
     return;
   endif
@@ -167,6 +176,7 @@ function varargout = test2_refactor (name, flag = "normal", fid = [])
 
   runner = testify.internal.BistRunner (file);
   runner.output_mode = opts.output_mode;
+  runner.fail_fast = opts.fail_fast;
 
   ## Special-case per-file behaviors
 
@@ -175,7 +185,7 @@ function varargout = test2_refactor (name, flag = "normal", fid = [])
     varargout = { s.code, s.ixs };
     return
   endif
-
+  
   runner.out_file = opts.log_fname;
   runner.run_demo = opts.rundemo;
 
@@ -183,7 +193,7 @@ function varargout = test2_refactor (name, flag = "normal", fid = [])
     error ("Unimplemented test mode: %s", opts.mode);
   endif
 
-  rslt = runner.run_tests;
+  [rslt, info] = runner.run_tests;
 
   if nargout == 0
     runner.print_test_results (rslt);
@@ -193,81 +203,96 @@ function varargout = test2_refactor (name, flag = "normal", fid = [])
       varargout = {rslt.n_fail, rslt.n_test, rslt.n_xfail, rslt.n_xfail_bug, ...
          rslt.n_skip_feature, rslt.n_skip_runtime, rslt.n_regression};
     else
-      varargout = {rslt.n_fail, rslt};
+      varargout = {rslt.n_fail, rslt, info};
     endif
   endif
 
 endfunction
 
-function out = parse_args (name, flag, fid)
-  persistent signal_fail  = "!!!!! ";
-  persistent signal_empty = "????? ";
-  persistent signal_block = "***** ";
-  persistent signal_file  = ">>>>> ";
-  persistent signal_skip  = "----- ";
+function out = parse_args (name, args)
 
   if (! isempty (name) && ! ischar (name))
-    error ("test2: NAME must be a string; got a %s", class (name));
-  elseif (! ischar (flag))
-    error ("test2: second argument must be a string; got a %s", class (flag));
-  endif
-
-  ## Decide if error messages should be collected.
-  out = struct;
-  do_logfile = ! isempty (fid);
-  batch = do_logfile || nargout > 0;
-  cleanup = struct;
-  log_fname = [];
-  out.fid = [];
-  if (do_logfile)
-    if (ischar (fid))
-      log_fname = fid;
-    else
-      out.fid = fid;
-    endif
-    if (! strcmp (flag, "explain"))
-      emit (fid, "%sprocessing %s\n", signal_file, name);
-    endif
-  else
-    fid = stdout;
+    error ("test2: name must be a string; got a %s", class (name));
   endif
 
   mode = "test";
   output_mode = "normal";
-  if (strcmp (flag, "normal"))
-    grabdemo = false;
-    rundemo  = false;
-    if (do_logfile)
-      verbose = 1;
-    elseif (batch)
-      verbose = -1;
+  fail_fast = true;
+  fid = [];
+  log_fname = [];
+  
+  i = 1;
+  while i <= numel (args)
+    arg = args{i};
+    if ischar (arg)
+      switch arg
+        case {"grabdemo", "explain"}
+          mode = arg;
+          i += 1;
+        case {"normal", "verbose", "quiet"}
+          output_mode = arg;
+          i += 1;
+        case "-fail-fast"
+          fail_fast = true;
+          i += 1;
+        case "-no-fail-fast"
+          fail_fast = false;
+          i += 1;
+        case "-log-fid"
+          fid = args{i+1};
+          i += 2;
+        case "-log-file"
+          fid = args{i+1};
+          i += 2;        
+        otherwise
+          error ("test2: unrecognized option: %s", arg)
+      endswitch
     else
-      verbose = 0;
+      error ("test2: unrecognized option (got a %s)", class (arg));
     endif
-  elseif (strcmp (flag, "quiet"))
-    grabdemo = false;
-    rundemo  = false;
-    verbose  = -1;
-    output_mode = "quiet";
-  elseif (strcmp (flag, "verbose"))
-    grabdemo = false;
-    rundemo  = ! batch;
-    verbose  = 1;
-    output_mode = "verbose";
-  elseif (strcmp (flag, "grabdemo"))
-    mode = "grabdemo";
-    grabdemo = true;
-    rundemo  = false;
-    verbose  = -1;
-    output_mode = "quiet";
-  elseif (strcmp (flag, "explain"))
-    mode = "explain";
-  else
-    error ("test2: unknown flag '%s'", flag);
-  endif
+  endwhile
+
+  ## Decide if error messages should be collected.
+  out = struct;
+  do_logfile = ! isempty (fid) || ! isempty (log_fname);
+  batch = do_logfile || nargout > 0;
+  cleanup = struct;
+  out.fid = fid;
+  out.log_fname = log_fname;
+
+  grabdemo = false;
+  rundemo = false;
+  switch mode
+    case "grabdemo"
+      mode = "grabdemo";
+      grabdemo = true;
+      rundemo  = false;
+      verbose  = -1;
+      output_mode = "quiet";
+    case "explain"
+    case "test"
+    otherwise
+      error ("test2: unknown operation mode: '%s'", mode);
+  endswitch
+  switch output_mode
+    case "normal"
+      if (do_logfile)
+        verbose = 1;
+      elseif (batch)
+        verbose = -1;
+      else
+        verbose = 0;
+      endif
+    case "quiet"
+      verbose  = -1;
+    case "verbose"
+      rundemo  = ! batch;
+      verbose  = 1;
+    otherwise
+      error ("test2: unknown output mode: '%s'", output_mode);
+  endswitch
 
   out.name = name;
-  out.flag = flag;
   out.mode = mode;
   out.do_logfile = do_logfile;
   out.log_fname = log_fname;
@@ -275,6 +300,7 @@ function out = parse_args (name, flag, fid)
   out.rundemo = rundemo;
   out.output_mode = output_mode;
   out.verbose = verbose;
+  out.fail_fast = fail_fast;
 endfunction
 
 function emit_output_explanation (fid)
