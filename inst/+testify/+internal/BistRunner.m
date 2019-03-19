@@ -273,12 +273,16 @@ classdef BistRunner < handle
             case "demo"
               % Each demo gets evaled in its own workspace, with no shared variables
               demo_ws = testify.internal.BistWorkspace;
-              try
-                demo_ws.eval (block.code);
-              catch err
-                success = false;
-                msg = [signal_fail "demo failed\n" err.message];
-              end_try_catch
+              if this.run_demo
+                try
+                  demo_ws.eval (block.code);
+                catch err
+                  success = false;
+                  msg = [signal_fail "demo failed\n" err.message];
+                end_try_catch
+              else
+                msg = [signal_skip "demo skipped\n"];
+              endif
 
             case "error"
               try
