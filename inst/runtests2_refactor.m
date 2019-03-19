@@ -146,7 +146,7 @@ function out = parse_inputs (args)
         i += 1;
       case ""
         error ("runtests2: empty string is not a valid argument");
-      default
+      otherwise
         if arg(1) == "-"
           error ("runtests2: invalid option: %s", arg);
         endif
