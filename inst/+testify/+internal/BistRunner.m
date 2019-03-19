@@ -412,7 +412,7 @@ classdef BistRunner < handle
           endif
           out.pattern = pattern;
           out.pat_str = pat_str;
-          out.id = id;
+          out.error_id = id;
           out.code = code;
 
         case "testif"

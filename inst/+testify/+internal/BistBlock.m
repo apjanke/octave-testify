@@ -49,9 +49,11 @@ classdef BistBlock
   	bug_id
   	fixed_bug
   	is_warning
+    % Regexp pattern for matching message in "error" and "warning" tests
   	pattern
   	pat_str
-  	id
+    % Expected error identifier for "error" tests
+  	error_id
   	% Runtime feature test for "testif" blocks
   	runtime_feat_test
   	% Feature line for "testif" blocks
