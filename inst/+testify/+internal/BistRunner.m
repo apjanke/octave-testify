@@ -236,21 +236,26 @@ classdef BistRunner < handle
         for i_block = 1:numel (blocks)
           block = blocks(i_block);
           success = true;
-          msg = [];
+          msg = "--original message--";
 
           this.fprintf_verbose ("%s %s (block #%d)\n%s\n", ...
             signal_block, block.type, block.index, block.code);
 
+          #fprintf ("DEBUG: Processing block:\n");
+          #fprintf ("==== begin block display ====\n");
+          #disp (block);
+          #fprintf ("==== end block display ====\n");
+
           switch block.type
 
             case { "test", "xtest", "assert", "fail" }
-              [rslt, msg] = run_test_code (this, block, workspace, rslt);
+              [success, rslt, msg] = run_test_code (this, block, workspace, rslt);
 
             case "testif"
               have_feature = __have_feature__ (block.feature);
               if have_feature
                 if isempty (block.runtime_feature_test) || eval (block.runtime_feature_test)
-                  [rslt, msg] = run_test_code (this, block, workspace, rslt);
+                  [success, rslt, msg] = run_test_code (this, block, workspace, rslt);
                 else
                   rslt.n_skip_runtime += 1;
                   msg = [signal_skip "skipped test (runtime test)\n"];
@@ -296,6 +301,7 @@ classdef BistRunner < handle
                 success = false;
                 msg = [signal_fail "no error raised."];
               catch err
+                msg = "";
                 [ok, diagnostic] = this.error_matches_expected (err, block);
                 if ! ok
                   success = false;
@@ -373,11 +379,12 @@ classdef BistRunner < handle
 
     endfunction
 
-    function [rslt, msg] = run_test_code (this, block, workspace, rslt)
+    function [success, rslt, msg] = run_test_code (this, block, workspace, rslt)
       persistent signal_fail  = "!!!!! ";
       msg = "";
       try
         workspace.eval (block.code);
+        success = true;
       catch err
         if isempty (lasterr ())
           error ("test: empty error text, probably Ctrl-C --- aborting");
@@ -406,9 +413,8 @@ classdef BistRunner < handle
             endif
           endif
         else
-          msg = "test failed";
+          msg = sprintf ("test failed: raised error: %s", err.message);
         endif
-        msg = [signal_fail msg "\n" lasterr()];
       end_try_catch
     endfunction
 
@@ -574,6 +580,7 @@ classdef BistRunner < handle
           out.code = code;
 
         case "testif"
+          out.is_test = true;
           e = regexp (contents, ".$", "lineanchors", "once");
           ## Strip any comment and bug-id from testif line before
           ## looking for features
