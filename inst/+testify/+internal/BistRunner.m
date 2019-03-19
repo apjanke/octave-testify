@@ -231,6 +231,10 @@ classdef BistRunner < handle
           success = true;
           msg = [];
 
+          if this.verbose > 0
+            fprintf ("%s %s (%d)\n%s\n", signal_block, block.type, block.index, block.code);
+          endif
+
           switch block.type
 
             case { "test", "xtest", "assert", "fail" }
@@ -277,7 +281,7 @@ classdef BistRunner < handle
 
             case "error"
               try
-                workspace.eval (code);
+                workspace.eval (block.code);
                 % No error raised - that's a test failure
                 success = false;
                 msg = [signal_fail "no error raised."];
@@ -295,7 +299,7 @@ classdef BistRunner < handle
               warning ("on", "quiet");
               unwind_protect
                 try
-                  workspace.eval (code);
+                  workspace.eval (block.code);
                   [warn_msg, warn_id] = lastwarn;
                   [ok, diagnostic] = this.warning_matches_expected (warn_msg, warn_id, block);
                   if ! ok
@@ -319,6 +323,10 @@ classdef BistRunner < handle
               msg = [signal_skip "skipped test (unknown BIST block type: " block.type ")\n"];
 
           endswitch
+
+          if this.verbose > 0
+            fprintf ("  -> success=%d, msg=%s\n", success, msg);
+          endif
 
           if block.is_test
             rslt.n_test += 1;
@@ -355,8 +363,9 @@ classdef BistRunner < handle
 
     function [rslt, msg] = run_test_code (this, block, workspace, rslt)
       persistent signal_fail  = "!!!!! ";
+      msg = "";
       try
-        workspace.eval (code);
+        workspace.eval (block.code);
       catch err
         if isempty (lasterr ())
           error ("test: empty error text, probably Ctrl-C --- aborting");
@@ -459,6 +468,7 @@ classdef BistRunner < handle
       block_txts = this.split_test_code_into_blocks (test_code);
       for i = 1:numel (block_txts)
         out(i) = this.parse_test_code_block (block_txts{i});
+        out(i).index = i;
       end
     endfunction
 
@@ -575,11 +585,11 @@ classdef BistRunner < handle
             out.runtime_feature_test = feat_line(ix+1:end);
             feat_line = feat_line(1:ix-1);
           else
-            out.runtime_feat_test = "";
+            out.runtime_feature_test = "";
           endif
           feat = regexp (feat_line, '\w+', 'match');
           feat = strrep (feat, "HAVE_", "");
-          out.feature;
+          out.feature = feat;
 
         case "test"
           [bug_id, code, fixed_bug] = this.find_bugid_in_assert (contents);

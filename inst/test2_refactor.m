@@ -155,17 +155,18 @@ function varargout = test2_refactor (name, flag = "normal", fid = [])
   file = testify.internal.BistRunner.locate_test_file (name, ! opts.grabdemo, fid);
   if isempty (file)
     # Failed finding file; return "false" in appropriate format
-    if (opts.grabdemo)
+    if opts.grabdemo
       varargout = {"", -1};
-    elseif (nargout ==1)
+    elseif nargout ==1
       varargout = {false};
-    else
+    elseif nargout > 1
       varargout = {0, 0};
     endif
     return
   endif
 
   runner = testify.internal.BistRunner (file);
+  runner.output_mode = opts.output_mode;
 
   ## Special-case per-file behaviors
 
@@ -183,8 +184,6 @@ function varargout = test2_refactor (name, flag = "normal", fid = [])
   endif
 
   rslt = runner.run_tests;
-  varargout = { rslt.n_fail, rslt };
-  return;
 
   if nargout == 0
     runner.print_test_results (rslt);
@@ -234,6 +233,7 @@ function out = parse_args (name, flag, fid)
   endif
 
   mode = "test";
+  output_mode = "normal";
   if (strcmp (flag, "normal"))
     grabdemo = false;
     rundemo  = false;
@@ -248,15 +248,18 @@ function out = parse_args (name, flag, fid)
     grabdemo = false;
     rundemo  = false;
     verbose  = -1;
+    output_mode = "quiet";
   elseif (strcmp (flag, "verbose"))
     grabdemo = false;
     rundemo  = ! batch;
     verbose  = 1;
+    output_mode = "verbose";
   elseif (strcmp (flag, "grabdemo"))
     mode = "grabdemo";
     grabdemo = true;
     rundemo  = false;
     verbose  = -1;
+    output_mode = "quiet";
   elseif (strcmp (flag, "explain"))
     mode = "explain";
   else
@@ -270,6 +273,7 @@ function out = parse_args (name, flag, fid)
   out.log_fname = log_fname;
   out.grabdemo = grabdemo;
   out.rundemo = rundemo;
+  out.output_mode = output_mode;
   out.verbose = verbose;
 endfunction
 
