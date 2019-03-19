@@ -215,7 +215,8 @@ classdef BistRunner < handle
 
       # Get initial state for tracking and cleanup
       fid_list_orig = fopen ("all");
-      base_variables_orig = [evalin("base", "who") {"ans"}];
+      base_variables_orig = evalin("base", "who");
+      base_variables_orig{end+1} = "ans";
       global_variables_orig = who ("global");
       orig_wstate = warning ();
 
