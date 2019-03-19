@@ -1,6 +1,6 @@
 Name: testify
-Version: 0.2.0+
-Date: 2019-03-17
+Version: 0.3.0
+Date: 2019-03-19
 Title: Testify - enhanced test suite stuff
 Author: Andrew Janke <floss@apjanke.net>
 Maintainer: Andrew Janke <floss@apjanke.net>
