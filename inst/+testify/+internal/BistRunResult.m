@@ -90,7 +90,7 @@ classdef BistRunResult
     endfunction
 
     function out = get.files_with_no_tests (this)
-      out = setdiff (this.files_processed, files_with_tests);
+      out = setdiff (this.files_processed, this.files_with_tests);
     endfunction
     
     function out = plus(A, B)
