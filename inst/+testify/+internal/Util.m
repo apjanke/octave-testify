@@ -75,6 +75,12 @@ classdef Util
       end_unwind_protect
     endfunction
 
+    function filewrite (filename, str)
+    fid = fopen2 (filename, "w");
+    fprintf (fid, "%s", str);
+    fclose (fid);
+    endfunction
+
   endmethods
 
 endclassdef

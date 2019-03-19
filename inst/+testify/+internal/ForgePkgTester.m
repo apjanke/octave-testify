@@ -135,11 +135,29 @@ classdef ForgePkgTester < handle
       this.tmp_run_dir = fullfile (tempdir, [output_dir_base_name "-run"]);
     endfunction
     
+    function out = acquire_lock (this)
+      lock_dir = fullfile (getenv("HOME"), "octave", "testify", ...
+        "forge-tester", "locks");
+      mkdir (lock_dir);
+      lock_file = fullfile (lock_dir, "test.lock");
+      if exist (lock_file)
+        error (["Could not acquire lock. Lock file exists: %s\n" ...
+          "This means another test operation is in progress."], ...
+          lock_file);
+      endif
+      str = sprintf ("pid %d at %s\n", getpid, datestr (now));
+      testify.internal.Util.filewrite (lock_file, str);
+      out = struct;
+      out.file = lock_file;
+      out.cleanup = onCleanup (@() delete (lock_file));
+    endfunction
+
     function out = get.all_installed_pkgs (this)
       out = [this.tested_pkgs this.deps_installed_ok];
     endfunction
 
     function install_and_test_forge_pkgs (this)
+      lock = this.acquire_lock;
       if (this.do_doctest)
         pkg ("load", "doctest");
       endif
