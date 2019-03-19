@@ -96,9 +96,10 @@ classdef MultiBistRunner < handle
         return
       endif
 
-      # Function?
-
-      # Class?
+      # Function? Class?
+      if this.add_ns_qualified_function_or_class (target)
+        return
+      endif
 
       error ("MultiBistRunner: Could not resolve test target %s", target);
     endfunction
@@ -149,39 +150,82 @@ classdef MultiBistRunner < handle
     function add_function (this, name)
       %TODO: Add support for namespaces. This will require doing our own path search,
       % because which() doesn't support them.
-      fcn_file = which (name);
-      if ! isempty (fcn_file) && endswith_any (fcn_file, '.m')
+      fcn_file = this.search_function_file (name);
+      if ! isempty (fcn_file)
         this.add_fileset (["function " name], fcn_file);
       endif
     endfunction
 
     function add_class (this, name)
-      % TODO: Find all the files for this class, looking for multiple @class dirs
-      % all along the Octave path. Don't forget namespace support.
       files = this.search_class_files (name);
       this.add_fileset (["class " name], files);
     endfunction
 
+    function out = search_function_file (this, name)
+      % We do this instead of which() because which() does not support namespaces
+      ref = this.parse_namespaced_thing (name);
+      identifier = ref.thing;
+      if ref.is_namespaced
+        ns_els = strsplit (ref.namespace, ".");
+        ns_path = ["/" strjoin(strcat("+",ns_els), filesep) "/"];
+      else
+        ns_path = "";
+      endif
+
+      p = ostrsplit (path, pathsep, true);
+      for i = 1:numel (p)
+        dir = p{i};
+        fcn_file = [dir ns_path [identifier ".m"]];
+        if exist (fcn_file, "file")
+          out = fcn_file;
+          return;
+        endif
+      endfor
+
+      out = [];
+    end
+
     function out = search_class_files (this, name)
       % Finds all files in a class definition
-      if any (name == ".")
-        error ("MultiBistRunner:search_class_files: namespaces are not yet implemented.");
+
+      ref = this.parse_namespaced_thing (name);
+      identifier = ref.thing;
+      if ref.is_namespaced
+        ns_els = strsplit (ref.namespace, ".");
+        ns_path = ["/" strjoin(strcat("+",ns_els), filesep) "/"];
+      else
+        ns_path = "";
       endif
 
       out = {};
       p = ostrsplit (path, pathsep, true);
       for i = 1:numel (p)
         dir = p{i};
-        classdef_file = fullfile (dir, [name ".m"]);
+        classdef_file = [dir ns_path [identifier ".m"]];
         if exist (classdef_file, "file") && is_classdef_file (classdef_file)
           out{end+1} = classdef_file;
         endif
-        atclass_dir = fullfile (dir, ["@" name]);
+        atclass_dir = [dir ns_path ["@" identifier]];
         if exist (atclass_dir, "dir")
           atclass_files = this.search_directory (atclass_dir, true);
           out = [out atclass_files];
         endif
       endfor
+    endfunction
+
+    function out = add_ns_qualified_function_or_class (this, name)
+      out = true;
+      fcn_file = this.search_function_file (name);
+      if ! isempty (fcn_file)
+        this.add_function (name);
+        return
+      endif
+      class_files = this.search_class_files (name);
+      if ! isempty (class_files)
+        this.add_class (name);
+        return
+      endif
+      out = false;
     endfunction
 
     function out = looks_like_testable_file (this, file)
@@ -274,6 +318,23 @@ classdef MultiBistRunner < handle
 		    out = false;
 		  endif
 		endfunction
+
+    function out = parse_namespaced_thing (this, thing)
+      % Parse a possibly namespace-qualified identifier.
+      % Note that this only works for classes and functions, not methods, because
+      % it operates on just the name, so it can't differentiate a namespace from
+      % a namespaced class that is prefixing a method name
+      ix = find (thing == ".");
+      if isempty (ix)
+        out.namespace = "";
+        out.thing = thing;
+        out.is_namespaced = false;
+      else
+        out.namespace = thing(1:ix(end)-1);
+        out.thing = thing(ix(end)+1:end);
+        out.is_namespaced = true;
+      endif
+    endfunction
 
   endmethods
 

@@ -46,8 +46,6 @@
 ##   -search-path         - Test everything on the Octave search path
 ##   -octave-builtins     - Test Octave's interpreter and built-in functions
 ##
-## Namespaces are not yet supported for function and class names.
-##
 ## If no target is specified, operates on all directories in Octave's search
 ## path. (The same as -search-path.)
 ##
