@@ -158,7 +158,30 @@ classdef MultiBistRunner < handle
     function add_class (this, name)
       % TODO: Find all the files for this class, looking for multiple @class dirs
       % all along the Octave path. Don't forget namespace support.
-      error ("MultiBistRunner: add_class is not yet implemented.");
+      files = this.search_class_files (name);
+      this.add_fileset (["class " name], files);
+    endfunction
+
+    function out = search_class_files (this, name)
+      % Finds all files in a class definition
+      if any (name == ".")
+        error ("MultiBistRunner:search_class_files: namespaces are not yet implemented.");
+      endif
+
+      out = {};
+      p = ostrsplit (path, pathsep, true);
+      for i = 1:numel (p)
+        dir = p{i};
+        classdef_file = fullfile (dir, [name ".m"]);
+        if exist (classdef_file, "file") && is_classdef_file (classdef_file)
+          out{end+1} = classdef_file;
+        endif
+        atclass_dir = fullfile (dir, ["@" name]);
+        if exist (atclass_dir, "dir")
+          atclass_files = this.search_directory (atclass_dir, true);
+          out = [out atclass_files];
+        endif
+      endfor
     endfunction
 
     function out = looks_like_testable_file (this, file)
@@ -301,5 +324,14 @@ function print_test_file_name (nm)
   nm = strrep (nm, matlabroot, "<Octave>");
   filler = repmat (".", 1, 60-length (nm));
   printf ("  %s %s", nm, filler);
+endfunction
+
+function out = is_classdef_file (file)
+  out = false;
+  if ! exist (file, "file")
+    return
+  endif
+  code = fileread (file);
+  out = regexp (code, '^\s*classdef\s+', 'lineanchors');
 endfunction
 
