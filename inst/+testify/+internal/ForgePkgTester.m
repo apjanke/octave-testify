@@ -32,12 +32,16 @@ classdef ForgePkgTester < handle
       "quaternion"
       % Bad compare_version() call causes doctest to error out
       "interval"
+      % Bad something in skip test causes doctest to error out
+      "symbolic"
     }';
     known_bad_pkgs_test_windows = {
       % Seems to crash Octave
       "control"
       % Bad compare_version() call causes doctest to error out
       "interval"
+      % Bad something in skip test causes doctest to error out
+      "symbolic"
     };
     known_bad_pkgs_test_linux = {
       % Sometimes segfaults Octave in test
@@ -46,6 +50,8 @@ classdef ForgePkgTester < handle
       "level-set"
       % Bad compare_version() call causes doctest to error out
       "interval"
+      % Bad something in skip test causes doctest to error out
+      "symbolic"
     };
     my_impl_pkgs  = {
       "testify"
