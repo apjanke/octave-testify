@@ -89,6 +89,7 @@
 ##   -no-fail-fast     - Do not abort the test run upon failures
 ##   -log-file <file>  - A file name to write result log output to
 ##   -log-fid <fid>    - An fid to write result log output to
+##   -shuffle          - Shuffle the test block execution order
 ##
 ## When called with output arguments (and not in @qcode{"grabdemo"} or @qcode{"explain"}
 ## mode), returns the following outputs:
@@ -177,6 +178,7 @@ function varargout = test2_refactor (name, varargin)
   runner = testify.internal.BistRunner (file);
   runner.output_mode = opts.output_mode;
   runner.fail_fast = opts.fail_fast;
+  runner.shuffle = opts.shuffle;
 
   ## Special-case per-file behaviors
 
@@ -220,6 +222,9 @@ function out = parse_args (name, args)
   fail_fast = true;
   fid = [];
   log_fname = [];
+  shuffle = false;
+  shuffle_seed = [];
+  shuffle_flag = [];
   
   i = 1;
   while i <= numel (args)
@@ -243,7 +248,13 @@ function out = parse_args (name, args)
           i += 2;
         case "-log-file"
           fid = args{i+1};
-          i += 2;        
+          i += 2;
+        case "-shuffle"
+          shuffle = true;
+          i += 1;
+        case "-shuffle-seed"
+          shuffle_seed = args{i+1};
+          i += 2;
         otherwise
           error ("test2: unrecognized option: %s", arg)
       endswitch
@@ -292,6 +303,13 @@ function out = parse_args (name, args)
       error ("test2: unknown output mode: '%s'", output_mode);
   endswitch
 
+  if ! isempty (shuffle_flag)
+    shuffle = shuffle_flag;
+  endif
+  if ! isempty (shuffle_seed)
+    shuffle = shuffle_seed;
+  endif
+
   out.name = name;
   out.mode = mode;
   out.do_logfile = do_logfile;
@@ -301,6 +319,9 @@ function out = parse_args (name, args)
   out.output_mode = output_mode;
   out.verbose = verbose;
   out.fail_fast = fail_fast;
+  out.shuffle_flag = shuffle_flag;
+  out.shuffle_seed = shuffle_seed;
+  out.shuffle = shuffle;
 endfunction
 
 function emit_output_explanation (fid)

@@ -59,6 +59,22 @@ classdef Util
 	  endif
 	endfunction
 
+    function out = shuffle (x, seed)
+      orig_seed = rand ("seed");
+      unwind_protect
+        rand ("seed", seed);
+        out = x(1:0);
+        ixs_left = 1:numel(x);
+        while ! isempty (ixs_left)
+          ix = randi (numel (ixs_left));
+          out(end+1) = x(ixs_left(ix));
+          ixs_left(ix) = [];
+        endwhile
+      unwind_protect_cleanup
+        rand ("seed", orig_seed);
+      end_unwind_protect
+    endfunction
+
   endmethods
 
 endclassdef

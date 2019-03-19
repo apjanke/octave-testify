@@ -35,6 +35,11 @@ classdef BistRunner < handle
     run_demo = false;
     % If true, will abort the test run immediately upon any failure
     fail_fast = false;
+    % Whether the test blocks should be shuffled.
+    %  false:   no shuffle (default)
+    %  true:    shuffle using a seed that BistRunner picks
+    %  numeric: shuffle using this seed
+    shuffle = false;
   endproperties
 
   properties (Dependent)
@@ -198,6 +203,20 @@ classdef BistRunner < handle
       endif
     endfunction
 
+    function out = maybe_shuffle_blocks (this, blocks)
+      if this.shuffle
+        if isnumeric (this.shuffle)
+          shuffle_seed = this.shuffle;
+        else
+          shuffle_seed = now;
+        endif
+        this.fprintf_verbose ("Shuffling test blocks with rand seed %.15f\n", shuffle_seed);
+        out = testify.internal.Util.shuffle (blocks, shuffle_seed);
+      else
+        out = blocks;
+      endif
+    endfunction
+
     function [out, info] = run_tests (this)
       %RUN_TESTS Run the tests found in this file
       persistent signal_fail  = "!!!!! ";
@@ -218,6 +237,8 @@ classdef BistRunner < handle
       endif
       this.fprintf_verbose (">>>>> %s\n", this.file);
       blocks = this.parse_test_code (test_code);
+
+      blocks = this.maybe_shuffle_blocks (blocks);
 
       # Get initial state for tracking and cleanup
       fid_list_orig = fopen ("all");
