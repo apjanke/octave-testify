@@ -72,7 +72,11 @@ function [p, __info__] = runtests2_refactor (directory)
 
   # Run tests
 
+  t0 = tic;
   rslts = runner.run_tests;
+  te = toc (t0);
+
+  print_results_summary (rslts, te);
 
   if nargout >= 1
     p = rslts.n_fail == 0;
@@ -82,6 +86,119 @@ function [p, __info__] = runtests2_refactor (directory)
   endif
 endfunction
 
+function print_results_summary (rslts, t_elapsed)
+  puts ("\n");
+  puts ("Summary:\n");
+  puts ("\n");
+  hg_id = __octave_config_info__ ("hg_id");
+  printf ("  GNU Octave Version: %s (hg id: %s)\n", OCTAVE_VERSION, hg_id);
+  printf ("  Tests run on %s (%s) at %s\n", my_safe_hostname, os_name, datestr (now));
+  printf ("  Execution time: %.0f s\n", t_elapsed);
+  printf ("\n");
+  printf ("  %-30s %6d\n", "PASS", rslts.n_pass);
+  printf ("  %-30s %6d\n", "FAIL", rslts.n_really_fail);
+  if (rslts.n_regression > 0)
+    printf ("  %-30s %6d\n", "REGRESSION", rslts.n_regression);
+  endif
+  if (rslts.n_xfail_bug > 0)
+    printf ("  %-30s %6d\n", "XFAIL (reported bug)", rslts.n_xfail_bug);
+  endif
+  if (rslts.n_xfail > 0)
+    printf ("  %-30s %6d\n", "XFAIL (expected failure)", rslts.n_xfail);
+  endif
+  if (rslts.n_skip_feature > 0)
+    printf ("  %-30s %6d\n", "SKIP (missing feature)", rslts.n_skip_feature);
+  endif
+  if (rslts.n_skip_runtime > 0)
+    printf ("  %-30s %6d\n", "SKIP (run-time condition)", rslts.n_skip_runtime);
+  endif
+  if ! isempty (rslts.failed_files)
+    printf ("\n");
+    printf ("  Failed tests:\n");
+    for i = 1:numel (rslts.failed_files)
+      printf ("     %s\n", reduce_test_file_name (rslts.failed_files{i}, ...
+        topbuilddir, topsrcdir));
+    endfor
+  endif
+  puts ("\n");
+  if (rslts.n_xfail > 0 || rslts.n_xfail_bug > 0)
+    puts ("\n");
+    puts ("XFAIL items are known bugs or expected failures.\n");
+    puts ("\nPlease help improve Octave by contributing fixes for them.\n");
+  endif
+  if (rslts.n_skip_feature > 0 || rslts.n_skip_runtime > 0)
+    puts ("\n");
+    puts ("Tests are often skipped because required features were\n");
+    puts ("disabled or were not present when Octave was built.\n");
+    puts ("The configure script should have printed a summary\n");
+    puts ("indicating which dependencies were not found.\n");
+  endif
+
+  ## Weed out deprecated, legacy, and private functions
+  files_with_tests = rslts.files_with_tests;
+  weed_idx = cellfun (@isempty, regexp (files_with_tests, '\<deprecated\>|\<legacy\>|\<private\>', 'once'));
+  files_with_tests = files_with_tests(weed_idx);
+  files_with_no_tests = rslts.files_with_no_tests;
+  weed_idx = cellfun (@isempty, regexp (files_with_no_tests, '\<deprecated\>|\<legacy\>|\<private\>', 'once'));
+  files_with_no_tests = files_with_no_tests(weed_idx);
+
+  report_files_with_no_tests (files_with_tests, files_with_no_tests, ".m");
+
+endfunction
+
+function out = reduce_test_file_name (nm, builddir, srcdir)
+  ## Reduce the given absolute file name to a relative path by removing one
+  ## of the likely root directory prefixes.
+
+  prefix = { builddir, fullfile(builddir, "scripts"), ...
+             srcdir, fullfile(srcdir, "scripts"), ...
+             srcdir, fullfile(srcdir, "test") };
+
+  out = nm;
+
+  for i = 1:numel (prefix)
+    tmp = strrep (nm, [prefix{i}, filesep], "");
+    if (length (tmp) < length (out))
+      out = tmp;
+    endif
+  endfor
+endfunction
+
+function n = num_elts_matching_pattern (lst, pat)
+  n = sum (! cellfun ("isempty", regexp (lst, pat, 'once')));
+endfunction
+
+function report_files_with_no_tests (with, without, typ)
+  pat = ['\' typ "$"];
+  n_with = num_elts_matching_pattern (with, pat);
+  n_without = num_elts_matching_pattern (without, pat);
+  n_tot = n_with + n_without;
+  printf ("\n%d (of %d) %s files have no tests.\n", n_without, n_tot, typ);
+endfunction
+
+function out = os_name
+  if ispc
+    out = "Windows";
+  elseif ismac
+    out = "macOS";
+  else
+    out = "Unix";
+  endif
+endfunction
+
+function out = my_safe_hostname ()
+  [status, host] = system ("hostname 2>/dev/null");
+  if status == 0
+    out = chomp (host);
+  else
+    % Yes, this might happen. E.g. hostname fails under Flatpak
+    out = "unknown-host";
+  endif
+endfunction
+
+function out = chomp (str)
+  out = regexprep (str, "\r?\n$", "");
+endfunction
 
 
 %!error runtests2 ("foo", 1)
