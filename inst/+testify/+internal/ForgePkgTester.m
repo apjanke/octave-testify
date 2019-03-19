@@ -141,11 +141,14 @@ classdef ForgePkgTester < handle
       mkdir (lock_dir);
       lock_file = fullfile (lock_dir, "test.lock");
       if exist (lock_file)
+        lock_file_contents = fileread (lock_file);
         error (["Could not acquire lock. Lock file exists: %s\n" ...
-          "This means another test operation is in progress."], ...
-          lock_file);
+          "This means another test operation is in progress.\n" ...
+          "Lock owner: %s"], ...
+          lock_file, lock_file_contents);
       endif
-      str = sprintf ("pid %d at %s\n", getpid, datestr (now));
+      host = testify.internal.Util.safe_hostname;
+      str = sprintf ("pid %d on %s at %s\n", getpid, host, datestr (now));
       testify.internal.Util.filewrite (lock_file, str);
       out = struct;
       out.file = lock_file;
