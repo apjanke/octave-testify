@@ -30,16 +30,22 @@ classdef ForgePkgTester < handle
       "octproj"
       % Crashes Octave in test
       "quaternion"
+      % Bad compare_version() call causes doctest to error out
+      "interval"
     }';
     known_bad_pkgs_test_windows = {
       % Seems to crash Octave
       "control"
+      % Bad compare_version() call causes doctest to error out
+      "interval"
     };
     known_bad_pkgs_test_linux = {
       % Sometimes segfaults Octave in test
       "control"
       % Crashes Octave in test
       "level-set"
+      % Bad compare_version() call causes doctest to error out
+      "interval"
     };
     my_impl_pkgs  = {
       "testify"
