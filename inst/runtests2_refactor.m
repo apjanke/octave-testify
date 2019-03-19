@@ -48,8 +48,8 @@
 ##
 ## Namespaces are not yet supported for function and class names.
 ##
-## If no directory is specified, operate on all directories in Octave's search
-## path for functions.
+## If no target is specified, operates on all directories in Octave's search
+## path. (The same as -search-path.)
 ##
 ## When called with a single return value (@var{success}), return false if
 ## there were any unexpected test failures, otherwise return true.  An extra
@@ -91,6 +91,8 @@ function [p, __info__] = runtests2_refactor (varargin)
         runner.add_class (t.item);
       case "pkg"
         runner.add_package (t.item);
+      case "installed_pkgs"
+        runner.add_installed_packages;
       case "octave_builtins"
         runner.add_octave_builtins;
       otherwise
@@ -138,6 +140,9 @@ function out = parse_inputs (args)
       case "-pkg"
         out.targets = [out.targets target("pkg", args{i+1})];
         i += 2;
+      case "-installed-pkgs"
+        out.targets = [out.targets target("installed_pkgs", [])];
+        i += 1;
       case "-search-path"
         out.targets = [out.targets target("search_path", [])];
         i += 1;
@@ -170,7 +175,7 @@ function out = target (type, item)
     for i = 1:numel (item)
       out = [out target(type, item{i})];
     endfor
-  elseif ischar (item)
+  elseif ischar (item) || isnumeric (item)
     out.type = type;
     out.item = item;
   else

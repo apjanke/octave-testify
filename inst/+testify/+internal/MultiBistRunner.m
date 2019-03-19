@@ -199,6 +199,13 @@ classdef MultiBistRunner < handle
       this.add_fileset (["package " name], files);
     endfunction
 
+    function add_installed_packages (this)
+      pkgs = pkg ("list");
+      for i = 1:numel (pkgs)
+        this.add_package (pkgs{i}.name);
+      endfor
+    endfunction
+
     function add_octave_builtins (this)
       % Add the tests for all the Octave builtins
       testsdir = __octave_config_info__ ("octtestsdir");
