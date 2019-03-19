@@ -53,7 +53,7 @@ classdef MultiBistRunner < handle
       % Add a specified test target, inferring its type from its value
       %
       % Right now, this only supports files and dirs
-      if nargin < 3 || isempty (tag); tag = file; end
+      if nargin < 3 || isempty (tag); tag = target; end
 
       if ! ischar (target)
         error ("MultiBistRunner.add_target_auto: target must be char; got %s", class (target));

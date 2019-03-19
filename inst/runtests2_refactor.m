@@ -147,12 +147,16 @@ function out = parse_inputs (args)
       case ""
         error ("runtests2: empty string is not a valid argument");
       otherwise
-        if arg(1) == "-"
-          error ("runtests2: invalid option: %s", arg);
-        endif
-        if arg(1) == "@"
-          out.targets = [out.targets target("class", arg(2:end))];
-        else
+        if ischar (arg)
+          if arg(1) == "-"
+            error ("runtests2: invalid option: %s", arg);
+          endif
+          if arg(1) == "@"
+            out.targets = [out.targets target("class", arg(2:end))];
+          else
+            out.targets = [out.targets target("auto", arg)];
+          endif
+        elseif iscellstr (arg)
           out.targets = [out.targets target("auto", arg)];
         endif
         i += 1;
@@ -161,8 +165,17 @@ function out = parse_inputs (args)
 endfunction
 
 function out = target (type, item)
-  out.type = type;
-  out.item = item;
+  if iscellstr (item)
+    out = [];
+    for i = 1:numel (item)
+      out = [out target(type, item{i})];
+    endfor
+  elseif ischar (item)
+    out.type = type;
+    out.item = item;
+  else
+    error ("Invalid item type: %s", class (item));
+  endif
 endfunction
 
 function print_results_summary (rslts, t_elapsed)
