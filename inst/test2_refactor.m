@@ -169,7 +169,7 @@ function varargout = test2_refactor (name, flag = "normal", fid = [])
 
   ## Special-case per-file behaviors
 
-  if isequal (opts.flag, "grabdemo")
+  if isequal (opts.mode, "grabdemo")
     s = runner.extract_demo_code ();
     varargout = { s.code, s.ixs };
     return
@@ -179,8 +179,11 @@ function varargout = test2_refactor (name, flag = "normal", fid = [])
   runner.run_demo = opts.rundemo;
 
   if isequal (opts.mode, "test")
-    runner.run_tests;
+    rslt = runner.run_tests;
+    varargout = { rslt.nfail, rslt };
     return;
+  else
+    error ("Unimplemented test mode: %s", opts.mode);
   endif
 
   for __i = 1:numel (__blockidx) - 1
