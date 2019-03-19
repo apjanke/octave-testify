@@ -20,11 +20,11 @@
 
 ## -*- texinfo -*-
 ## @documentencoding UTF-8
-## @deftypefn  {} {} __test_pkgs__
-## @deftypefnx {} {} __test_pkgs__ @var{pkg_name}
-## @deftypefnx {} {} __test_pkgs__ (@var{pkg_names}, @var{options})
-## @deftypefnx {} {@var{success} =} __test_pkgs__ (@dots{})
-## @deftypefnx {} {[@var{nfailed}, @var{__info__}] =} __test_pkgs__ (@dots{})
+## @deftypefn  {} {} test_pkgs
+## @deftypefnx {} {} test_pkgs @var{pkg_name}
+## @deftypefnx {} {} test_pkgs (@var{pkg_names}, @var{options})
+## @deftypefnx {} {@var{success} =} test_pkgs (@dots{})
+## @deftypefnx {} {[@var{nfailed}, @var{__info__}] =} test_pkgs (@dots{})
 ## Run tests for packages
 ##
 ## A single package can be testing by passing @var{pkg_name}.
@@ -72,7 +72,7 @@
 ## @example
 ## @c doctest: +SKIP_IF (isempty (ver ('optim')))
 ## @group
-## __test_pkgs__ optim
+## test_pkgs optim
 ##   @print{} Running package tests
 ##   @print{} ...
 ##   @print{} Testing package optim ...
@@ -85,25 +85,25 @@
 ## Test all installed packages:
 ## @c doctest +SKIP
 ## @example
-## __test_pkgs__
+## test_pkgs
 ## @end example
 ##
 ## Test all packages, including loading all together to check compatibility:
 ## @c doctest _SKIP
 ## @example
-## __test_pkgs__ ([], @{'all_together', true@})
+## test_pkgs ([], @{'all_together', true@})
 ## @end example
 ##
 ## Torture test:
 ## @c doctest _SKIP
 ## @example
-## __test_pkgs__ ([], @{'all_together', true, 'n_iters', 4@})
+## test_pkgs ([], @{'all_together', true, 'n_iters', 4@})
 ## @end example
 ##
 ## @seealso{test, runtests}
 ## @end deftypefn
 
-function nfailed = __test_pkgs__ (pkg_names, options)
+function nfailed = test_pkgs (pkg_names, options)
 
   if nargin < 1;  pkg_names = {};  endif
   if nargin < 2;  options = {};    endif
@@ -115,13 +115,18 @@ function nfailed = __test_pkgs__ (pkg_names, options)
     "doctest",      true);
   opts = testify.internal.Util.parse_options (options, default_opts);
 
+  if opts.doctest
+    make_sure_doctest_is_loaded;
+  endif
+
   if (isempty (pkg_names))
     pkg_names = list_installed_packages ();
   endif
   pkg_names = cellstr (pkg_names);
-  # Kludge: Don't test Testify, because we need it to stay loaded while running
+  # Kludge: Don't test Testify etc, because we need it to stay loaded while running
   # the tests.
-  pkg_names = setdiff (pkg_names, {'testify'});
+  my_impl_pkgs = {'testify', 'doctest'}
+  pkg_names = setdiff (pkg_names, {'testify', 'doctest'});
 
   nfailed = 0;
 
@@ -372,3 +377,10 @@ function print_test_file_name (nm)
   printf ("  %s %s", nm, filler);
 endfunction
 
+function make_sure_doctest_is_loaded
+  w = which ("doctest");
+  if isempty (w)
+    error (["test_pkgs: Could not find doctest() function. " ...
+      " Make sure the doctest package is installed and loaded."]);
+  endif
+endfunction
