@@ -167,7 +167,20 @@ classdef BistRunner < handle
       this.fid = [];
     endfunction
 
-    function out = extract_demo_code (this)
+    function  = extract_demo_code (this)
+      test_code = this.extract_test_code;
+      blocks = this.parse_test_code (test_code);
+      demo_blocks_txt = {};
+      demo_blocks_ix = [];
+      for i = 1:numel (blocks)
+        block = blocks(i);
+        if isequal (block.type, "demo")
+          demo_blocks_txt{end+1} = block.code;
+          demo_blocks_ix(end+1) = numel (block.code) + 1;
+        endif
+      endfor
+      out.code = strjoin (demo_blocks_txt, "");
+      out.ixs = demo_blocks_ix;
     endfunction
 
     function out = run_tests (this)
