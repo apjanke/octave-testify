@@ -39,6 +39,26 @@ classdef Util
 	  out = opts;
 	endfunction
 
+	function out = safe_hostname ()
+	  [status, host] = system ("hostname 2>/dev/null");
+	  if status == 0
+	    out = chomp (host);
+	  else
+	    % Yes, this might happen. E.g. hostname fails under Flatpak
+	    out = "unknown-host";
+	  endif
+	endfunction
+
+	function out = os_name ()
+	  if ispc
+	    out = "Windows";
+	  elseif ismac
+	    out = "macOS";
+	  else
+	    out = "Unix";
+	  endif
+	endfunction
+
   endmethods
 
 endclassdef

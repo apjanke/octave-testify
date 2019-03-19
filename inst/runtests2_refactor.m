@@ -189,7 +189,9 @@ function print_results_summary (rslts, t_elapsed)
   puts ("\n");
   hg_id = __octave_config_info__ ("hg_id");
   printf ("  GNU Octave Version: %s (hg id: %s)\n", OCTAVE_VERSION, hg_id);
-  printf ("  Tests run on %s (%s) at %s\n", my_safe_hostname, os_name, datestr (now));
+  host = testify.internal.Util.safe_hostname;
+  os_name = testify.internal.Util.os_name;
+  printf ("  Tests run on %s (%s) at %s\n", host, os_name, datestr (now));
   printf ("  Execution time: %.0f s\n", t_elapsed);
   printf ("\n");
   printf ("  %-30s %6d\n", "PASS", rslts.n_pass);
@@ -271,26 +273,6 @@ function report_files_with_no_tests (with, without, typ)
   n_without = num_elts_matching_pattern (without, pat);
   n_tot = n_with + n_without;
   printf ("\n%d (of %d) %s files have no tests.\n", n_without, n_tot, typ);
-endfunction
-
-function out = os_name
-  if ispc
-    out = "Windows";
-  elseif ismac
-    out = "macOS";
-  else
-    out = "Unix";
-  endif
-endfunction
-
-function out = my_safe_hostname ()
-  [status, host] = system ("hostname 2>/dev/null");
-  if status == 0
-    out = chomp (host);
-  else
-    % Yes, this might happen. E.g. hostname fails under Flatpak
-    out = "unknown-host";
-  endif
 endfunction
 
 function out = chomp (str)

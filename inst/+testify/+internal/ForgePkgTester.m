@@ -317,18 +317,8 @@ classdef ForgePkgTester < handle
       endfor    
     endfunction
     
-    function out = my_safe_hostname (this)
-      [status, host] = system ("hostname 2>/dev/null");
-      if status == 0
-        out = chomp (host);
-      else
-        % Yes, this might happen. E.g. hostname fails under Flatpak
-        out = "unknown-host";
-      endif
-    endfunction
-
     function display_log_header (this)
-      host = this.my_safe_hostname;
+      host = testify.internal.Util.safe_hostname;
       fprintf ("Tests run on %s at %s\n", host, datestr (now));
       ver
       if ismac
