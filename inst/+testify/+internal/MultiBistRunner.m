@@ -49,6 +49,60 @@ classdef MultiBistRunner < handle
       endif
     endfunction
 
+    function add_target_auto (this, target, tag)
+      % Add a specified test target, inferring its type from its value
+      %
+      % Right now, this only supports files and dirs
+      if nargin < 3 || isempty (tag); tag = file; end
+
+      if ! ischar (target)
+        error ("MultiBistRunner.add_target_auto: target must be char; got %s", class (target));
+      endif
+
+      # File or dir?
+      canon_path = canonicalize_file_name (target);
+      if ! isempty (canon_path) && exist (canon_path, "file")
+        this.add_file (canon_path, tag);
+        return
+      elseif ! isempty (canon_path) &&  exist (canon_path, "dir")
+        this.add_directory (canon_path, tag);
+        return
+      elseif exist (target, "file")
+        this.add_file (target, tag);
+        return
+      elseif exist (target, "dir")
+        this.add_directory (target, tag);
+        return
+      else
+        # Search for dir on path
+        f = target;
+        if f(end) == '/' || f(end) == '\'
+          f(end) = [];
+        endif
+        found_dir = dir_in_loadpath (f);
+        if ! isempty (found_dir)
+          this.add_directory (found_dir, tag);
+          return
+        endif
+      endif
+
+      # File glob?
+      if any (target == "*")
+        files = glob (target);
+        if isempty (files)
+          error ("File not found: %s", target);
+        endif
+        this.add_fileset (tag, files);
+        return
+      endif
+
+      # Function?
+
+      # Class?
+
+      error ("MultiBistRunner: Could not resolve test target %s", target);
+    endfunction
+
     function add_file (this, file, tag)
       if nargin < 3 || isempty (tag); tag = file; end
       if isfolder (file)
@@ -122,6 +176,10 @@ classdef MultiBistRunner < handle
       this.add_fileset (["package " name], files);
     endfunction
 
+    function add_octave_builtins (this)
+      % Add the tests for all the Octave builtins
+    endfunction
+
     function out = run_tests (this)
 
       # Run tests
@@ -148,6 +206,7 @@ classdef MultiBistRunner < handle
 			    printf ("\nThe following files in %s have no tests:\n\n", tag);
 			    printf ("%s\n", list_in_columns (rslts.files_with_no_tests, [], "  "));
 			  endif
+        out = out + rslts;
       endfor
 
     endfunction

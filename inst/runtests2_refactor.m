@@ -23,13 +23,29 @@
 
 ## -*- texinfo -*-
 ## @deftypefn  {} {} runtests2 ()
-## @deftypefnx {} {} runtests2 (@var{directory})
+## @deftypefnx {} {} runtests2 (@var{target})
+## @deftypefnx {} {} runtests2 (@var{-<option>}, @var{arg}, @dots{})
 ## @deftypefnx {} {@var{success} =} runtests2 (@dots{})
 ## @deftypefnx {} {[@var{success}, @var{__info__}] =} runtests2 (@dots{})
 ## Execute built-in tests for all m-files in the specified @var{directory}.
 ##
 ## Test blocks in any C++ source files (@file{*.cc}) will also be executed
 ## for use with dynamically linked oct-file functions.
+##
+## @var{target} may be a file, directory, class, or function name. If @var{target}
+## starts with a "@", it is always interpreted as a class. Directories may be
+## either regular paths, or a directory that is on the Octave load path.
+##
+## Options:
+##
+##   -file <name>
+##   -dir <name>
+##   -class <name>        - Test a class
+##   -function <name>     - Test a function
+##   -pkg <name>          - Test an installed pkg package
+##   -search-path         - Test everything on the Octave search path
+##
+## Namespaces are not yet supported for function and class names.
 ##
 ## If no directory is specified, operate on all directories in Octave's search
 ## path for functions.
@@ -45,30 +61,39 @@
 
 ## Author: jwe
 
-function [p, __info__] = runtests2_refactor (directory)
-
+function [p, __info__] = runtests2_refactor (varargin)
 
   # Parse inputs and find tests
+  opts = parse_inputs (varargin);
+
+  # Find tests
 
   runner = testify.internal.MultiBistRunner;
-  if nargin == 0
-    runner.add_stuff_on_octave_search_path;
-  else
-    tag = directory;
-    directory = canonicalize_file_name(directory);
-    if isempty (directory) || ! isfolder (directory)
-      ## Search for directory name in path
-      if directory(end) == '/' || directory(end) == '\'
-        directory(end) = [];
-      endif
-      fullname = dir_in_loadpath (directory);
-      if isempty (fullname)
-        error ("runtests2: DIRECTORY argument must be a valid pathname");
-      endif
-      directory = fullname;
-    endif
-    runner.add_directory (directory, tag);
-  endif
+  targets = opts.targets;
+  if isempty (targets)
+    targets = struct ("type", "search_path", "item", []);
+  endif    
+  for i = 1:numel (targets)
+    t = targets(i);
+    switch t.type
+      case "auto"
+        runner.add_target_auto (t.item);
+      case "file"
+        runner.add_file (t.item);
+      case "dir"
+        runner.add_directory (t.item);
+      case "search_path"
+        runner.add_stuff_on_octave_search_path;
+      case "function"
+        runner.add_function (t.item);
+      case "class"
+        runner.add_class (t.item);
+      case "pkg"
+        runner.add_package (t.item);
+      otherwise
+        error ("Unsupported target type: %s", t.type);
+    endswitch
+  endfor
 
   # Run tests
 
@@ -84,6 +109,54 @@ function [p, __info__] = runtests2_refactor (directory)
   if nargout == 2
     __info__ = rslts;
   endif
+endfunction
+
+function out = parse_inputs (args)
+  out.targets = [];
+  i = 1;
+  while i <= numel (args)
+    arg = args{i};
+    switch arg
+      case "-auto"
+        out.targets = [out.targets target("auto", args{i+1})];
+        i += 2;
+      case "-file"
+        out.targets = [out.targets target("file", args{i+1})];
+        i += 2;
+      case "-dir"
+        out.targets = [out.targets target("dir", args{i+1})];
+        i += 2;
+      case "-class"
+        out.targets = [out.targets target("class", args{i+1})];
+        i += 2;
+      case "-function"
+        out.targets = [out.targets target("function", args{i+1})];
+        i += 2;
+      case "-pkg"
+        out.targets = [out.targets target("pkg", args{i+1})];
+        i += 2;
+      case "-search-path"
+        out.targets = [out.targets target("search_path", [])];
+        i += 1;
+      case ""
+        error ("runtests2: empty string is not a valid argument");
+      default
+        if arg(1) == "-"
+          error ("runtests2: invalid option: %s", arg);
+        endif
+        if arg(1) == "@"
+          out.targets = [out.targets target("class", arg(2:end))];
+        else
+          out.targets = [out.targets target("auto", arg)];
+        endif
+        i += 1;
+    endswitch
+  endwhile
+endfunction
+
+function out = target (type, item)
+  out.type = type;
+  out.item = item;
 endfunction
 
 function print_results_summary (rslts, t_elapsed)
