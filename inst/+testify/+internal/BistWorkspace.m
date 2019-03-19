@@ -59,15 +59,15 @@ classdef BistWorkspace < handle
 
     function wax_on (this)
       %WAX_ON Restore this's workspace to caller function's workspace
-      for i = 1:numel (vars)
-        assignin ("caller", vars{i}, this.workspace(vars{i}));
+      for i = 1:numel (this.vars)
+        assignin ("caller", this.vars{i}, this.workspace(this.vars{i}));
       endfor
     endfunction
 
     function wax_off (this)
       %WAX_OFF Persist variables from caller function's workspace to this
-      for i = 1:numel (vars)
-        this.workspace.(vars{i}) = evalin ("caller", vars{i});
+      for i = 1:numel (this.vars)
+        this.workspace.(this.vars{i}) = evalin ("caller", this.vars{i});
       endfor
     endfunction
 
