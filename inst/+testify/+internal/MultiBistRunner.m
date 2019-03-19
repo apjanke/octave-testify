@@ -39,6 +39,8 @@ classdef MultiBistRunner < handle
     test_file_extensions = {'.m', '.cc', '.cc-tst'}
     % Control for shuffling test file order. true/false/double
     shuffle = false;
+    fail_fast = false;
+    save_workspace_on_failure = false;
   endproperties
 
   methods
@@ -296,15 +298,22 @@ classdef MultiBistRunner < handle
         printf ("Processing files for %s:\n\n", tag);
         files = this.maybe_shuffle_thing (files, "files");
         rslts = testify.internal.BistRunResult;
+        abort = false;
         for i_file = 1:numel (files)
           file = files{i_file};
           if this.file_has_tests (file)
             print_test_file_name (file);
 		        runner = testify.internal.BistRunner (file);
+            runner.fail_fast = this.fail_fast;
+            runner.save_workspace_on_failure = this.save_workspace_on_failure;
          	 	runner.output_mode = "quiet";
           	rslt = runner.run_tests;
             print_pass_fail (rslt);
           	rslts = rslts + rslt;
+            if this.fail_fast && rslt.n_fail > 0
+              abort = true;
+              break
+            endif
           elseif this.file_has_functions (file)
             rslts.files_processed{end+1} = file;
           endif
@@ -315,6 +324,9 @@ classdef MultiBistRunner < handle
 			    printf ("%s\n", list_in_columns (rslts.files_with_no_tests, [], "  "));
 			  endif
         out = out + rslts;
+        if abort
+          break
+        endif
       endfor
 
     endfunction

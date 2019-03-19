@@ -90,6 +90,7 @@
 ##   -log-file <file>  - A file name to write result log output to
 ##   -log-fid <fid>    - An fid to write result log output to
 ##   -shuffle          - Shuffle the test block execution order
+##   -save-workspace   - Save workspace data for failed test
 ##
 ## When called with output arguments (and not in @qcode{"grabdemo"} or @qcode{"explain"}
 ## mode), returns the following outputs:
@@ -179,6 +180,7 @@ function varargout = test2_refactor (name, varargin)
   runner.output_mode = opts.output_mode;
   runner.fail_fast = opts.fail_fast;
   runner.shuffle = opts.shuffle;
+  runner.save_workspace_on_failure = opts.save_workspace;
 
   ## Special-case per-file behaviors
 
@@ -225,6 +227,7 @@ function out = parse_args (name, args)
   shuffle = false;
   shuffle_seed = [];
   shuffle_flag = [];
+  save_workspace = false;
   
   i = 1;
   while i <= numel (args)
@@ -254,6 +257,9 @@ function out = parse_args (name, args)
           i += 1;
         case "-shuffle-seed"
           shuffle_seed = args{i+1};
+          i += 2;
+        case "-save-workspace"
+          save_workspace = true;
           i += 2;
         otherwise
           error ("test2: unrecognized option: %s", arg)
@@ -322,6 +328,7 @@ function out = parse_args (name, args)
   out.shuffle_flag = shuffle_flag;
   out.shuffle_seed = shuffle_seed;
   out.shuffle = shuffle;
+  out.save_workspace = save_workspace;
 endfunction
 
 function emit_output_explanation (fid)

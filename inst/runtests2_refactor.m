@@ -47,6 +47,8 @@
 ##   -octave-builtins     - Test Octave's interpreter and built-in functions
 ##   -shuffle             - Shuffle file sets and file orders
 ##   -shuffle-seed <seed> - Shuffle file sets and file orders with given seed
+##   -fail-fast           - Abort the test run upon the first test failure
+##   -save-workspace      - Save test workspaces for failed tests
 ##
 ## If no target is specified, operates on all directories in Octave's search
 ## path. (The same as -search-path.)
@@ -71,6 +73,8 @@ function [p, __info__] = runtests2_refactor (varargin)
 
   runner = testify.internal.MultiBistRunner;
   runner.shuffle = opts.shuffle;
+  runner.fail_fast = opts.fail_fast;
+  runner.save_workspace_on_failure = opts.save_workspace;
   
   targets = opts.targets;
   if isempty (targets)
@@ -120,6 +124,9 @@ endfunction
 
 function out = parse_inputs (args)
   out.targets = [];
+  out.fail_fast = false;
+  out.save_workspace = false;
+
   i = 1;
   shuffle = false;
   shuffle_seed = [];
@@ -160,6 +167,12 @@ function out = parse_inputs (args)
       case "-shuffle-seed"
         shuffle_seed = args{i+1};
         i += 2;
+      case "-fail-fast"
+        out.fail_fast = true;
+        i += 1;
+      case "-save-workspace"
+        out.save_workspace = true;
+        i += 1;
       case ""
         error ("runtests2: empty string is not a valid argument");
       otherwise

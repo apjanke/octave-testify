@@ -40,7 +40,14 @@ classdef BistRunner < handle
     %  true:    shuffle using a seed that BistRunner picks
     %  numeric: shuffle using this seed
     shuffle = false;
+    % Whether to save workspaces for failed tests
+    save_workspace_on_failure = false;
   endproperties
+
+  properties (SetAccess = private)
+    % Temp dir for BistRunner's data for a particular run (for this whole file)
+    run_tmp_dir;
+  endproperties  
 
   properties (Dependent)
     verbose
@@ -217,6 +224,40 @@ classdef BistRunner < handle
       endif
     endfunction
 
+    function pick_run_tmp_dir (this)
+      tmp_dir_base = sprintf ("bist-run-%s", datestr(now, 'yyyy-mm-dd_HH-MM-SS'));
+      tmp_dir = fullfile (tempdir, "octave-testify-BistRunner", tmp_dir_base);
+      mkdir (tmp_dir);
+      this.run_tmp_dir = tmp_dir;
+    endfunction
+
+    function out = stashed_workspace_file (this)
+      ws_dir = fullfile (this.run_tmp_dir, "workspaces");
+      out = fullfile (ws_dir, "test-workspaces.mat");
+    endfunction
+
+    function stash_test_workspace (this, tag, data)
+      # Stashing the workspace must be done to a file, and not to appdata or somewhere
+      # else in Octave memory, to avoid keeping live references to handle objects and
+      # interfering with object lifecycle and cleanup, which could affect test behavior.
+      ws_file = this.stashed_workspace_file;
+      mkdir (fileparts (ws_file));
+      if exist (ws_file, "file")
+        stash_data = load (ws_file);
+      else
+        stash_data = struct;
+      endif
+      stash_data.(tag) = data;
+      save (ws_file, "-struct", "stash_data");
+    endfunction
+
+    function clear_stashed_workspace (this)
+      ws_file = this.stashed_workspace_file;
+      if exist (ws_file, "file")
+        delete (ws_file);
+      endif
+    endfunction
+
     function [out, info] = run_tests (this)
       %RUN_TESTS Run the tests found in this file
       persistent signal_fail  = "!!!!! ";
@@ -225,6 +266,7 @@ classdef BistRunner < handle
       persistent signal_file  = ">>>>> ";
       persistent signal_skip  = "----- ";
 
+      this.pick_run_tmp_dir;
       this.start_output;
       RAII.out_file = onCleanup (@() this.end_output);
       out = testify.internal.BistRunResult;
@@ -266,6 +308,11 @@ classdef BistRunner < handle
           #fprintf ("==== begin block display ====\n");
           #disp (block);
           #fprintf ("==== end block display ====\n");
+
+          if this.save_workspace_on_failure
+            this.clear_stashed_workspace;
+            this.stash_test_workspace ("before", workspace.workspace);
+          endif
 
           switch block.type
 
@@ -367,8 +414,16 @@ classdef BistRunner < handle
             rslt.n_test += 1;
             rslt.n_pass += success;
           endif
-          if this.fail_fast && ! success
-            break
+          if success
+            this.clear_stashed_workspace;
+          else
+            if this.save_workspace_on_failure
+              this.stash_test_workspace ("after", workspace.workspace);
+              fprintf ("\nSaved test workspace is available in: %s\n", this.stashed_workspace_file);
+            endif
+            if this.fail_fast
+              break
+            endif
           endif
         endfor
       unwind_protect_cleanup
