@@ -165,11 +165,13 @@ classdef BistRunner < handle
     endfunction
 
     function end_output (this)
-      fclose (this.fid);
-      this.fid = [];
+      if ! isempty (this.out_file)
+        fclose (this.fid);
+        this.fid = [];
+      endif
     endfunction
 
-    function  = extract_demo_code (this)
+    function out = extract_demo_code (this)
       test_code = this.extract_test_code;
       blocks = this.parse_test_code (test_code);
       demo_blocks_txt = {};
@@ -377,7 +379,6 @@ classdef BistRunner < handle
     function out = parse_test_code (this, test_code)
       % Parses the test code, returning BistBlock array
       block_txts = this.split_test_code_into_blocks (test_code);
-      out = repmat (testify.internal.BistBlock, [0 0]);
       for i = 1:numel (block_txts)
         out(i) = this.parse_test_code_block (block_txts{i});
       end
@@ -409,24 +410,27 @@ classdef BistRunner < handle
           # vars are the first line; code is the remaining lines
           ix = find (contents == "\n");
           if isempty (ix)
-            vars = contents;
+            vars_line = contents;
             code = "";
           else
-            vars = contents(1:ix(1)-1);
+            vars_line = contents(1:ix(1)-1);
             code = contents(ix(1):end);
           endif
 
           # Strip comments from variables line
-          ix = find (vars == "%" | vars == "#");
+          ix = find (vars_line == "%" | vars_line == "#");
           if ! isempty (ix)
-            vars = vars(1:ix(1)-1);
+            vars_line = vars_line(1:ix(1)-1);
           endif
-          vars = regexp (vars, "\s+", "split");
+          
+          vars = regexp (vars_line, '\s*,\s*', "split");
+          vars = regexprep (vars, '\s+$', "");
+          vars = regexprep (vars, '^\s+', "");
           out.vars = vars;
           out.code = code;
 
         case "function"
-          ix_fcn_name = find_function_name (contents);
+          ix_fcn_name = this.find_function_name (contents);
           if (isempty (ix_fcn_name))
             out.is_valid = false;
             out.error_message = "missing function name";
@@ -536,6 +540,7 @@ classdef BistRunner < handle
 
       ## Return the end points of the name.
       pos = [left, right];
+      out = pos;
     endfunction
 
     function [bug_id, rest, fixed] = find_bugid_in_assert (this, str)
@@ -605,5 +610,5 @@ endclassdef
 
 function out = trimleft (str)
   % Strip leading blanks from string(s)
-  str = regexprep (str, "^ +", "");
+  out = regexprep (str, "^ +", "");
 endfunction
