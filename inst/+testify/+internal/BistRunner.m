@@ -354,12 +354,12 @@ classdef BistRunner < handle
       leaked_base_vars = setdiff (evalin ("base", "who"), base_variables_orig);
       if (! isempty (leaked_base_vars))
         warning ("test2: file %s leaked variables to base workspace:%s\n",
-                 file, sprintf (" %s", leaked_base_vars{:}));
+                 this.file, sprintf (" %s", leaked_base_vars{:}));
       endif
       leaked_global_vars = setdiff (who ("global"), global_variables_orig);
       if (! isempty (leaked_global_vars))
         warning ("test2: file %s leaked global variables:%s\n",
-                 file, sprintf (" %s", leaked_global_vars{:}));
+                 this.file, sprintf (" %s", leaked_global_vars{:}));
       endif
 
       out = rslt;
