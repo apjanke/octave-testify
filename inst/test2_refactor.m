@@ -250,7 +250,7 @@ function out = parse_args (name, args)
           fid = args{i+1};
           i += 2;
         case "-shuffle"
-          shuffle = true;
+          shuffle_flag = true;
           i += 1;
         case "-shuffle-seed"
           shuffle_seed = args{i+1};

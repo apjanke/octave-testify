@@ -37,6 +37,8 @@ classdef MultiBistRunner < handle
     files = cell (0, 2)
     % Extensions for files that might contain tests
     test_file_extensions = {'.m', '.cc', '.cc-tst'}
+    % Control for shuffling test file order. true/false/double
+    shuffle = false;
   endproperties
 
   methods
@@ -268,14 +270,32 @@ classdef MultiBistRunner < handle
       endfor
     endfunction
 
+    function out = maybe_shuffle_thing (this, data, name)
+      if this.shuffle
+        if isnumeric (this.shuffle)
+          shuffle_seed = this.shuffle;
+        else
+          shuffle_seed = now;
+        endif
+        printf ("Shuffling %s with rand seed %.15f\n", name, shuffle_seed);
+        out = testify.internal.Util.shuffle (data, shuffle_seed);
+      else
+        out = data;
+      endif
+    endfunction
+
     function out = run_tests (this)
 
       # Run tests
+      ix_filesets = 1:size (this.files, 1);
+      ix_filesets = this.maybe_shuffle_thing (ix_filesets, "filesets");
+
       out = testify.internal.BistRunResult;
-      for i_fileset = 1:size (this.files, 1)
-        [tag, files] = this.files{i_fileset,:};
-        rslts = testify.internal.BistRunResult;
+      for i_fileset = 1:numel (ix_filesets)
+        [tag, files] = this.files{ix_filesets(i_fileset),:};
         printf ("Processing files for %s:\n\n", tag);
+        files = this.maybe_shuffle_thing (files, "files");
+        rslts = testify.internal.BistRunResult;
         for i_file = 1:numel (files)
           file = files{i_file};
           if this.file_has_tests (file)

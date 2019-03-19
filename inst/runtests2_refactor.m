@@ -45,6 +45,8 @@
 ##   -pkg <name>          - Test an installed pkg package
 ##   -search-path         - Test everything on the Octave search path
 ##   -octave-builtins     - Test Octave's interpreter and built-in functions
+##   -shuffle             - Shuffle file sets and file orders
+##   -shuffle-seed <seed> - Shuffle file sets and file orders with given seed
 ##
 ## If no target is specified, operates on all directories in Octave's search
 ## path. (The same as -search-path.)
@@ -68,6 +70,8 @@ function [p, __info__] = runtests2_refactor (varargin)
   # Find tests
 
   runner = testify.internal.MultiBistRunner;
+  runner.shuffle = opts.shuffle;
+  
   targets = opts.targets;
   if isempty (targets)
     targets = struct ("type", "search_path", "item", []);
@@ -117,6 +121,9 @@ endfunction
 function out = parse_inputs (args)
   out.targets = [];
   i = 1;
+  shuffle = false;
+  shuffle_seed = [];
+  shuffle_flag = [];
   while i <= numel (args)
     arg = args{i};
     switch arg
@@ -147,6 +154,12 @@ function out = parse_inputs (args)
       case "-octave-builtins"
         out.targets = [out.targets target("octave_builtins", [])];
         i += 1;
+      case "-shuffle"
+        shuffle_flag = true;
+        i += 1;
+      case "-shuffle-seed"
+        shuffle_seed = args{i+1};
+        i += 2;
       case ""
         error ("runtests2: empty string is not a valid argument");
       otherwise
@@ -165,6 +178,14 @@ function out = parse_inputs (args)
         i += 1;
     endswitch
   endwhile
+
+  if ! isempty (shuffle_flag)
+    shuffle = shuffle_flag;
+  endif
+  if ! isempty (shuffle_seed)
+    shuffle = shuffle_seed;
+  endif
+  out.shuffle = shuffle;
 endfunction
 
 function out = target (type, item)
