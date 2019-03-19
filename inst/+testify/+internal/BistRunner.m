@@ -206,10 +206,11 @@ classdef BistRunner < handle
       endif
       blocks = this.parse_test_code (test_code);
 
-      # Track leaked resources
+      # Get initial state for tracking and cleanup
       fid_list_orig = fopen ("all");
       base_variables_orig = [evalin("base", "who") {"ans"}];
       global_variables_orig = who ("global");
+      orig_wstate = warning ();
 
       all_success = true;
 
@@ -217,79 +218,124 @@ classdef BistRunner < handle
       rslt = testify.internal.BistRunResult;
       functions_to_clear = {};
 
-      for i_block = 1:numel (blocks)
-        block = blocks(i_block);
-        ok = true;
-        msg = [];
+      unwind_protect
+        for i_block = 1:numel (blocks)
+          block = blocks(i_block);
+          success = true;
+          msg = [];
 
-        switch block.type
-          case "test"
-            try
-              workspace.eval (code);
-            catch err
-              if isempty (lasterr ())
-                error ("test: empty error text, probably Ctrl-C --- aborting");
-              endif
-              success = false;
-              if block.is_xtest
-                if isempty (block.bug_id)
-                  if (block.fixed_bug)
-                    rslt.n_regression += 1;
-                    msg = "regression";
+          switch block.type
+
+            case { "test" "assert" "fail" }
+              try
+                workspace.eval (code);
+              catch err
+                if isempty (lasterr ())
+                  error ("test: empty error text, probably Ctrl-C --- aborting");
+                endif
+                success = false;
+                if block.is_xtest
+                  if isempty (block.bug_id)
+                    if (block.fixed_bug)
+                      rslt.n_regression += 1;
+                      msg = "regression";
+                    else
+                      rslt.n_xfail += 1;
+                      msg = "known failure";
+                    endif
                   else
-                    rslt.n_xfail += 1;
-                    msg = "known failure";
+                    bug_id_display = block.bug_id;
+                    if (all (isdigit (block.bug_id)))
+                      bug_id_display = ["https://octave.org/testfailure/?" __bug_id];
+                    endif
+                    if (block.fixed_bug)
+                      rslt.n_regression += 1;
+                      msg = ["regression: " bug_id_display];
+                    else
+                      rslt.n_xfail_bug += 1;
+                      msg = ["known bug: " bug_id_display];
+                    endif
                   endif
                 else
-                  bug_id_display = block.bug_id;
-                  if (all (isdigit (block.bug_id)))
-                    bug_id_display = ["https://octave.org/testfailure/?" __bug_id];
-                  endif
-                  if (block.fixed_bug)
-                    rslt.n_regression += 1;
-                    msg = ["regression: " bug_id_display];
-                  else
-                    rslt.n_xfail_bug += 1;
-                    msg = ["known bug: " bug_id_display];
-                  endif
+                  msg = "test failed";
                 endif
-              else
-                msg = "test failed";
-              endif
-              msg = [signal_fail msg "\n" lasterr()];
-            end_try_catch
-          case "shared"
-            workspace.add_vars (block.vars);
-          case "function"
-            try
-              eval (block.code);
-              functions_to_clear{end+1} = block.function_name;
-            catch err
-              ok = false;
-              msg = [signal_fail "test failed: syntax error in function definition\n" err.message];
-            end_try_catch
-          case "endfunction"
-            % NOP
-          case "demo"
-            % Each demo gets evaled in its own workspace, with no shared variables
-            demo_ws = testify.internal.BistWorkspace;
-            try
-              demo_ws.eval (block.code);
-            catch err
-              ok = false;
-              msg = [signal_fail "demo failed\n" err.message];
-            end_try_catch
-          case { "assert", "fail" }
-          case "error"
-          case "warning"
-        endswitch
+                msg = [signal_fail msg "\n" lasterr()];
+              end_try_catch
 
-        if block.is_test
-          rslt.n_test += 1;
-          rslt.n_pass += success;
+            case "shared"
+              workspace.add_vars (block.vars);
+
+            case "function"
+              try
+                eval (block.code);
+                functions_to_clear{end+1} = block.function_name;
+              catch err
+                success = false;
+                msg = [signal_fail "test failed: syntax error in function definition\n" err.message];
+              end_try_catch
+
+            case "endfunction"
+              % NOP
+
+            case "demo"
+              % Each demo gets evaled in its own workspace, with no shared variables
+              demo_ws = testify.internal.BistWorkspace;
+              try
+                demo_ws.eval (block.code);
+              catch err
+                success = false;
+                msg = [signal_fail "demo failed\n" err.message];
+              end_try_catch
+
+            case { "assert", "fail" }
+
+            case "error"
+              try
+                workspace.eval (code);
+                % No error raised - that's a test failure
+                success = false;
+                msg = [signal_fail "no error raised."];
+              catch err
+                [ok, diagnostic] = this.error_matches_expected (err, block);
+                if ! ok
+                  success = false;
+                  msg = [signal_fail "Incorrect error raised: " diagnostic];
+                endif
+              end_try_catch
+
+            case "warning"
+
+          endswitch
+
+          if block.is_test
+            rslt.n_test += 1;
+            rslt.n_pass += success;
+          endif
+        endfor
+      unwind_protect_cleanup
+        # Cleanup
+        for i = 1:numel (functions_to_clear)
+          clear (functions_to_clear{i});
+        endfor
+      end_unwind_protect
+
+      out = rslt;
+
+    endfunction
+
+    function [out, diagnostic] = error_matches_expected (this, err, block)
+      diagnostic = [];
+      if ! isempty (block.error_id)
+        out = isequal (err.identifier, block.error_id);
+        if ! out
+          diagnostic = sprintf ("expected id %s, but got %s", block.error_id, err.identifier);
         endif
-      endfor
-
+      else
+        out = ! isempty (regexp (err.message, block.pattern, "once"));
+        if ! out
+          diagnostic = sprintf ("expected error message matching /%s/, but got '%s'", block.pattern, err.message);
+        endif
+      endif
     endfunction
 
     function out = extract_test_code (this)
