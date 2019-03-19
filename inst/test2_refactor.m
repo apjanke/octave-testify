@@ -152,10 +152,10 @@ function varargout = test2_refactor (name, flag = "normal", fid = [])
 
   ## Locate the file to test.
 
-  file = testify.internal.BistRunnerlocate_test_file (name, ! grabdemo, fid);
-  if isempty (__file)
+  file = testify.internal.BistRunner.locate_test_file (name, ! opts.grabdemo, fid);
+  if isempty (file)
     # Failed finding file; return "false" in appropriate format
-    if (__grabdemo)
+    if (opts.grabdemo)
       varargout = {"", -1};
     elseif (nargout ==1)
       varargout = {false};
@@ -175,354 +175,26 @@ function varargout = test2_refactor (name, flag = "normal", fid = [])
     return
   endif
 
-  runner.out_file = opts.log_file;
+  runner.out_file = opts.log_fname;
   runner.run_demo = opts.rundemo;
 
-  if isequal (opts.mode, "test")
-    rslt = runner.run_tests;
-    varargout = { rslt.nfail, rslt };
-    return;
-  else
+  if ! isequal (opts.mode, "test")
     error ("Unimplemented test mode: %s", opts.mode);
   endif
 
+  rslt = runner.run_tests;
+  varargout = { rslt.n_fail, rslt };
+  return;
 
-
-### ERROR/WARNING
-
-      elseif (strcmp (__type, "error") || strcmp (__type, "warning"))
-        __istest = true;
-        __iswarning = strcmp (__type, "warning");
-        [__pattern, __id, __code] = getpattern (__code);
-        if (__id)
-          __patstr = ["id=" __id];
-        else
-          if (! strcmp (__pattern, '.'))
-            __patstr = ["<" __pattern ">"];
-          else
-            __patstr = ifelse (__iswarning, "a warning", "an error");
-          endif
-        endif
-        try
-          eval (sprintf ("function __test__(%s)\n%s\nendfunction",
-                         __shared, __code));
-        catch
-          __success = false;
-          __msg = [__signal_fail "test failed: syntax error\n" lasterr()];
-        end_try_catch
-
-        if (__success)
-          __success = false;
-          __warnstate = warning ("query", "quiet");
-          warning ("on", "quiet");
-          ## Clear error and warning strings before starting
-          lasterr ("");
-          lastwarn ("");
-          try
-            eval (sprintf ("__test__(%s);", __shared));
-            if (! __iswarning)
-              __msg = [__signal_fail "error failed.\n" ...
-                                     "Expected " __patstr ", but got no error\n"];
-            else
-              if (! isempty (__id))
-                [~, __err] = lastwarn ();
-                __mismatch = ! strcmp (__err, __id);
-              else
-                __err = trimerr (lastwarn (), "warning");
-                __mismatch = isempty (regexp (__err, __pattern, "once"));
-              endif
-              warning (__warnstate.state, "quiet");
-              if (isempty (__err))
-                __msg = [__signal_fail "warning failed.\n" ...
-                                       "Expected " __patstr ", but got no warning\n"];
-              elseif (__mismatch)
-                __msg = [__signal_fail "warning failed.\n" ...
-                                       "Expected " __patstr ", but got <" __err ">\n"];
-              else
-                __success = true;
-              endif
-            endif
-
-          catch
-            if (! isempty (__id))
-              [~, __err] = lasterr ();
-              __mismatch = ! strcmp (__err, __id);
-            else
-              __err = trimerr (lasterr (), "error");
-              __mismatch = isempty (regexp (__err, __pattern, "once"));
-            endif
-            warning (__warnstate.state, "quiet");
-            if (__iswarning)
-              __msg = [__signal_fail "warning failed.\n" ...
-                                     "Expected warning " __patstr ...
-                                     ", but got error <" __err ">\n"];
-            elseif (__mismatch)
-              __msg = [__signal_fail "error failed.\n" ...
-                                     "Expected " __patstr ", but got <" __err ">\n"];
-            else
-              __success = true;
-            endif
-          end_try_catch
-          clear __test__;
-        endif
-        ## Code already processed.
-        __code = "";
-
-### TESTIF HAVE_FEATURE
-### TESTIF HAVE_FEATURE ; RUNTIME_CONDITION
-### TESTIF HAVE_FEATURE <BUG-ID>
-### TESTIF HAVE_FEATURE ; RUNTIME_CONDITION <BUG-ID>
-###
-###   HAVE_FEATURE is a comma- or whitespace separated list of
-###   macro names that may be checked with __have_feature__.
-###
-###   RUNTIME_CONDITION is an expression to evaluate to check
-###   whether some condition is met when the test is executed.  For
-###   example, have_window_system.
-###
-###   BUG-ID is a bug number from the bug tracker.  A prefix of '*'
-###   indicates a bug that has been fixed.  Tests that fail for fixed
-###   bugs are reported as regressions.
-
-      elseif (strcmp (__type, "testif"))
-        __e = regexp (__code, '.$', 'lineanchors', 'once');
-        ## Strip any comment and bug-id from testif line before
-        ## looking for features
-        __feat_line = strtok (__code(1:__e), '#%');
-        __idx1 = index (__feat_line, "<");
-        if (__idx1)
-          __tmp = __feat_line(__idx1+1:end);
-          __idx2 = index (__tmp, ">");
-          if (__idx2)
-            __bug_id = __tmp(1:__idx2-1);
-            if (strncmp (__bug_id, "*", 1))
-              __bug_id = __bug_id(2:end);
-              __fixed_bug = true;
-            endif
-            __feat_line = __feat_line(1:__idx1-1);
-          endif
-        endif
-        __idx = index (__feat_line, ";");
-        if (__idx)
-          __runtime_feat_test = __feat_line(__idx+1:end);
-          __feat_line = __feat_line(1:__idx-1);
-        else
-          __runtime_feat_test = "";
-        endif
-        __feat = regexp (__feat_line, '\w+', 'match');
-        __feat = strrep (__feat, "HAVE_", "");
-        __have_feat = __have_feature__ (__feat);
-        if (__have_feat)
-          if (isempty (__runtime_feat_test) || eval (__runtime_feat_test))
-            if (isempty (__bug_id))
-              __istest = true;
-            else
-              __isxtest = true;
-            endif
-            __code = __code(__e + 1 : end);
-          else
-            __xrtskip += 1;
-            __code = ""; # Skip the code.
-            __msg = [__signal_skip "skipped test (runtime test)\n"];
-          endif
-        else
-          __xskip += 1;
-          __code = ""; # Skip the code.
-          __msg = [__signal_skip "skipped test (missing feature)\n"];
-        endif
-
-### TEST
-### TEST <BUG-ID>
-###
-###   BUG-ID is a bug number from the bug tracker.  A prefix of '*'
-###   indicates a bug that has been fixed.  Tests that fail for fixed
-###   bugs are reported as regressions.
-
-      elseif (strcmp (__type, "test"))
-        [__bug_id, __code, __fixed_bug] = getbugid (__code);
-        if (! isempty (__bug_id))
-          __isxtest = true;
-        else
-          __istest = true;
-        endif
-        ## Code will be evaluated below.
-
-### XTEST
-### XTEST <BUG-ID>
-###
-###   BUG-ID is a bug number from the bug tracker.  A prefix of '*'
-###   indicates a bug that has been fixed.  Tests that fail for fixed
-###   bugs are reported as regressions.
-
-      elseif (strcmp (__type, "xtest"))
-        __isxtest = true;
-        [__bug_id, __code, __fixed_bug] = getbugid (__code);
-        ## Code will be evaluated below.
-
-### Comment block.
-
-      elseif (strcmp (__block(1:1), "#"))
-        __code = ""; # skip the code
-
-### Unknown block.
-
-      else
-        __istest = true;
-        __success = false;
-        __msg = [__signal_fail "unknown test type!\n"];
-        __code = ""; # skip the code
-      endif
-
-      ## evaluate code for test, shared, and assert.
-      if (! isempty(__code))
-        try
-          eval (sprintf ("function %s__test__(%s)\n%s\nendfunction",
-                         __shared_r, __shared, __code));
-          eval (sprintf ("%s__test__(%s);", __shared_r, __shared));
-        catch
-          if (isempty (lasterr ()))
-            error ("test: empty error text, probably Ctrl-C --- aborting");
-          else
-            __success = false;
-            if (__isxtest)
-              if (isempty (__bug_id))
-                if (__fixed_bug)
-                  __xregression += 1;
-                  __msg = "regression";
-                else
-                  __xfail += 1;
-                  __msg = "known failure";
-                endif
-              else
-                if (__fixed_bug)
-                  __xregression += 1;
-                else
-                  __xbug += 1;
-                endif
-                if (all (isdigit (__bug_id)))
-                  __bug_id = ["https://octave.org/testfailure/?" __bug_id];
-                endif
-                if (__fixed_bug)
-                  __msg = ["regression: " __bug_id];
-                else
-                  __msg = ["known bug: " __bug_id];
-                endif
-              endif
-            else
-              __msg = "test failed";
-            endif
-            __msg = [__signal_fail __msg "\n" lasterr()];
-          endif
-        end_try_catch
-        clear __test__;
-      endif
-
-      ## All done.  Remember if we were successful and print any messages.
-      if (! isempty (__msg) && (__verbose >= 0 || __logfile))
-        ## Make sure the user knows what caused the error.
-        if (__verbose < 1)
-          emit (__fid, "%s%s\n", __signal_block, __block);
-        endif
-        emit (__fid, "%s\n", __msg);
-        ## Show the variable context.
-        if ((! ismember(__type, {"error", "testif", "xtest"})) && ! all (__shared == " "))
-          emit (__fid, "shared variables ");
-          eval (sprintf ("fdisp(__fid,vars2struct(%s));", __shared));
-        endif
-      endif
-      if (! __success && ! __isxtest)
-        __all_success = false;
-        ## Stop after 1 error if not in batch mode or only pass/fail requested.
-        if (! __batch || nargout == 1)
-          if (nargout > 0)
-            varargout = {0, 0};
-          endif
-          return;
-        endif
-      endif
-      __tests += (__istest || __isxtest);
-      __successes += __success && (__istest || __isxtest);
-
-    unwind_protect_cleanup
-      warning ("off", "all");
-      warning (orig_wstate);
-    end_unwind_protect
-  endfor
-
-  ## Clear any functions created during test run.
-  eval (__clearfcn, "");
-
-  ## Verify test file did not leak file descriptors.
-  if (! isempty (setdiff (fopen ("all"), __fid_list_orig)))
-    warning ("test2: file %s leaked file descriptors\n", __file);
-  endif
-
-  ## Verify test file did not leak variables in to base workspace.
-  __leaked_vars = setdiff (evalin ("base", "who"), __base_variables_orig);
-  if (! isempty (__leaked_vars))
-    warning ("test2: file %s leaked variables to base workspace:%s\n",
-             __file, sprintf (" %s", __leaked_vars{:}));
-  endif
-
-  ## Verify test file did not leak global variables.
-  __leaked_vars = setdiff (who ("global"), __global_variables_orig);
-  if (! isempty (__leaked_vars))
-    warning ("test2: file %s leaked global variables:%s\n",
-             __file, sprintf (" %s", __leaked_vars{:}));
-  endif
-
-  if (nargout == 0)
-    if (__tests || __xfail || __xbug || __xskip || __xrtskip)
-      if (__xfail || __xbug)
-        if (__xfail && __xbug)
-          printf ("PASSES %d out of %d test%s (%d known failure%s; %d known bug%s)\n",
-                  __successes, __tests, ifelse (__tests > 1, "s", ""),
-                  __xfail, ifelse (__xfail > 1, "s", ""),
-                  __xbug, ifelse (__xbug > 1, "s", ""));
-        elseif (__xfail)
-          printf ("PASSES %d out of %d test%s (%d known failure%s)\n",
-                  __successes, __tests, ifelse (__tests > 1, "s", ""),
-                  __xfail, ifelse (__xfail > 1, "s", ""));
-        elseif (__xbug)
-          printf ("PASSES %d out of %d test%s (%d known bug%s)\n",
-                  __successes, __tests, ifelse (__tests > 1, "s", ""),
-                  __xbug, ifelse (__xbug > 1, "s", ""));
-        endif
-      else
-        printf ("PASSES %d out of %d test%s\n", __successes, __tests,
-               ifelse (__tests > 1, "s", ""));
-      endif
-      if (__xskip)
-        printf ("Skipped %d test%s due to missing features\n", __xskip,
-                ifelse (__xskip > 1, "s", ""));
-      endif
-      if (__xrtskip)
-        printf ("Skipped %d test%s due to run-time conditions\n", __xrtskip,
-                ifelse (__xrtskip > 1, "s", ""));
-      endif
-    else
-      printf ("%s%s has no tests available\n", __signal_empty, __file);
-    endif
-  elseif (__grabdemo)
-    varargout = {__demo_code, __demo_idx};
-  elseif (nargout > 0)
-    __n = __successes;
-    __nmax = __tests;
-    __nxfail = __xfail;
-    __nbug = __xbug;
-    __nskip = __xskip;
-    __nrtskip = __xrtskip;
-    __nregression = __xregression;
-    __rslt = testify.internal.BistRunResult(__n, __nmax, __nxfail, __nbug, ...
-      __nskip, __nrtskip, __nregression);
-    __rslt.files_with_tests{end+1} = __file;
-    if (__rslt.n_really_fail > 2)
-      __rslt.failed_files{end+1} = __file;
-    endif
+  if nargout == 0
+    runner.print_test_results (rslt);
+  elseif nargout > 0
     if nargout > 2
-      varargout = {__n, __nmax, __nxfail, __nbug, __nskip, __nrtskip, __nregression};
+      # Legacy return signature
+      varargout = {rslt.n_fail, rslt.n_test, rslt.n_xfail, rslt.n_xfail_bug, ...
+         rslt.n_skip_feature, rslt.n_skip_runtime, rslt.n_regression};
     else
-      varargout = {__n, __rslt};
+      varargout = {rslt.n_fail, rslt};
     endif
   endif
 
@@ -547,9 +219,12 @@ function out = parse_args (name, flag, fid)
   batch = do_logfile || nargout > 0;
   cleanup = struct;
   log_fname = [];
-  if (logfile)
+  out.fid = [];
+  if (do_logfile)
     if (ischar (fid))
       log_fname = fid;
+    else
+      out.fid = fid;
     endif
     if (! strcmp (flag, "explain"))
       emit (fid, "%sprocessing %s\n", signal_file, name);
@@ -562,7 +237,7 @@ function out = parse_args (name, flag, fid)
   if (strcmp (flag, "normal"))
     grabdemo = false;
     rundemo  = false;
-    if (logfile)
+    if (do_logfile)
       verbose = 1;
     elseif (batch)
       verbose = -1;

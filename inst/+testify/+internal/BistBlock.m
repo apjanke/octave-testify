@@ -55,11 +55,11 @@ classdef BistBlock
     % Expected error identifier for "error" tests
   	error_id
   	% Runtime feature test for "testif" blocks
-  	runtime_feat_test
-  	% Feature line for "testif" blocks
-  	feat_line
+  	runtime_feature_test
   	% Feature for "testif" blocks
-  	feat
+  	feature
+    % The whole text of the feature line for "testif" blocks (for debugging)
+    feature_line
   endproperties
 
   methods

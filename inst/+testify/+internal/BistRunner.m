@@ -60,14 +60,17 @@ classdef BistRunner < handle
 
       file = file_in_loadpath (name, "all");
       if ! isempty (file)
+        file = file{1};
         return
       endif
       file = file_in_loadpath ([name ".m"], "all");
       if ! isempty (file)
+        file = file{1};
         return
       endif
       file = file_in_loadpath ([name ".cc"], "all");
       if ! isempty (file)
+        file = file{1};
         return
       endif
       testsdir = __octave_config_info__ ("octtestsdir");
@@ -230,41 +233,22 @@ classdef BistRunner < handle
 
           switch block.type
 
-            case { "test" "assert" "fail" }
-              try
-                workspace.eval (code);
-              catch err
-                if isempty (lasterr ())
-                  error ("test: empty error text, probably Ctrl-C --- aborting");
-                endif
-                success = false;
-                if block.is_xtest
-                  if isempty (block.bug_id)
-                    if (block.fixed_bug)
-                      rslt.n_regression += 1;
-                      msg = "regression";
-                    else
-                      rslt.n_xfail += 1;
-                      msg = "known failure";
-                    endif
-                  else
-                    bug_id_display = block.bug_id;
-                    if (all (isdigit (block.bug_id)))
-                      bug_id_display = ["https://octave.org/testfailure/?" block.bug_id];
-                    endif
-                    if (block.fixed_bug)
-                      rslt.n_regression += 1;
-                      msg = ["regression: " bug_id_display];
-                    else
-                      rslt.n_xfail_bug += 1;
-                      msg = ["known bug: " bug_id_display];
-                    endif
-                  endif
+            case { "test", "xtest", "assert", "fail" }
+              [rslt, msg] = run_test_code (this, block, workspace, rslt);
+
+            case "testif"
+              have_feature = __have_feature__ (block.feature);
+              if have_feature
+                if isempty (block.runtime_feature_test) || eval (block.runtime_feature_test)
+                  [rslt, msg] = run_test_code (this, block, workspace, rslt);
                 else
-                  msg = "test failed";
+                  rslt.n_skip_runtime += 1;
+                  msg = [signal_skip "skipped test (runtime test)\n"];
                 endif
-                msg = [signal_fail msg "\n" lasterr()];
-              end_try_catch
+              else
+                rslt.n_skip_feature += 1;
+                msg = [signal_skip "skipped test (missing feature)\n"];
+              endif
 
             case "shared"
               workspace = testify.internal.BistWorkspace (block.vars);
@@ -291,8 +275,6 @@ classdef BistRunner < handle
                 msg = [signal_fail "demo failed\n" err.message];
               end_try_catch
 
-            case { "assert", "fail" }
-
             case "error"
               try
                 workspace.eval (code);
@@ -308,6 +290,33 @@ classdef BistRunner < handle
               end_try_catch
 
             case "warning"
+              lastwarn ("");
+              orig_warn_state = warning ("query", "quiet");
+              warning ("on", "quiet");
+              unwind_protect
+                try
+                  workspace.eval (code);
+                  [warn_msg, warn_id] = lastwarn;
+                  [ok, diagnostic] = this.warning_matches_expected (warn_msg, warn_id, block);
+                  if ! ok
+                    success = false;
+                    msg = [signal_fail "Incorrect warning raised: " diagnostic];
+                  endif
+                catch err
+                  success = false;
+                  msg = [signal_fail "error raised: " err.message];
+                end_try_catch
+              unwind_protect_cleanup
+                lastwarn ("");
+                warning (orig_warn_state.state, "quiet");
+              end_unwind_protect
+
+            case "comment"
+              % NOP
+
+            default
+              # Unknown block type
+              msg = [signal_skip "skipped test (unknown BIST block type: " block.type ")\n"];
 
           endswitch
 
@@ -321,10 +330,65 @@ classdef BistRunner < handle
         for i = 1:numel (functions_to_clear)
           clear (functions_to_clear{i});
         endfor
+        warning ("off", "all");
+        warning (orig_wstate);
       end_unwind_protect
+
+      ## Verify test file did not leak resources
+      if (! isempty (setdiff (fopen ("all"), fid_list_orig)))
+        warning ("test2: file %s leaked file descriptors\n", file);
+      endif
+      leaked_base_vars = setdiff (evalin ("base", "who"), base_variables_orig);
+      if (! isempty (leaked_base_vars))
+        warning ("test2: file %s leaked variables to base workspace:%s\n",
+                 file, sprintf (" %s", leaked_base_vars{:}));
+      endif
+      leaked_global_vars = setdiff (who ("global"), global_variables_orig);
+      if (! isempty (leaked_global_vars))
+        warning ("test2: file %s leaked global variables:%s\n",
+                 file, sprintf (" %s", leaked_global_vars{:}));
+      endif
 
       out = rslt;
 
+    endfunction
+
+    function [rslt, msg] = run_test_code (this, block, workspace, rslt)
+      persistent signal_fail  = "!!!!! ";
+      try
+        workspace.eval (code);
+      catch err
+        if isempty (lasterr ())
+          error ("test: empty error text, probably Ctrl-C --- aborting");
+        endif
+        success = false;
+        if block.is_xtest
+          if isempty (block.bug_id)
+            if (block.fixed_bug)
+              rslt.n_regression += 1;
+              msg = "regression";
+            else
+              rslt.n_xfail += 1;
+              msg = "known failure";
+            endif
+          else
+            bug_id_display = block.bug_id;
+            if (all (isdigit (block.bug_id)))
+              bug_id_display = ["https://octave.org/testfailure/?" block.bug_id];
+            endif
+            if (block.fixed_bug)
+              rslt.n_regression += 1;
+              msg = ["regression: " bug_id_display];
+            else
+              rslt.n_xfail_bug += 1;
+              msg = ["known bug: " bug_id_display];
+            endif
+          endif
+        else
+          msg = "test failed";
+        endif
+        msg = [signal_fail msg "\n" lasterr()];
+      end_try_catch
     endfunction
 
     function [out, diagnostic] = error_matches_expected (this, err, block)
@@ -338,6 +402,20 @@ classdef BistRunner < handle
         out = ! isempty (regexp (err.message, block.pattern, "once"));
         if ! out
           diagnostic = sprintf ("expected error message matching /%s/, but got '%s'", block.pattern, err.message);
+        endif
+      endif
+    endfunction
+
+    function [out, diagnostic] = warning_matches_expected (this, warn_msg, warn_id, block)
+      if ! isempty (block.error_id)
+        out = isequal (warn_id, block.error_id);
+        if ! out
+          diagnostic = sprintf ("expected id %s, but got %s", block.error_id, warn_id);
+        endif
+      else
+        out = ! isempty (regexp (warn_msg, block.pattern, "once"));
+        if ! out
+          diagnostic = sprintf ("expected warning message matching /%s/, but got '%s'", block.pattern, warn_msg);
         endif
       endif
     endfunction
@@ -478,6 +556,7 @@ classdef BistRunner < handle
           ## Strip any comment and bug-id from testif line before
           ## looking for features
           feat_line = strtok (contents(1:e), '#%');
+          out.feature_line = feat_line;
           ix1 = index (feat_line, "<");
           if ix1
             tmp = feat_line(ix1+1:end);
@@ -493,13 +572,14 @@ classdef BistRunner < handle
           endif
           ix = index (feat_line, ";");
           if (ix)
-            runtime_feat_test = feat_line(ix+1:end);
+            out.runtime_feature_test = feat_line(ix+1:end);
             feat_line = feat_line(1:ix-1);
           else
-            runtime_feat_test = "";
+            out.runtime_feat_test = "";
           endif
           feat = regexp (feat_line, '\w+', 'match');
           feat = strrep (feat, "HAVE_", "");
+          out.feature;
 
         case "test"
           [bug_id, code, fixed_bug] = this.find_bugid_in_assert (contents);
@@ -517,6 +597,7 @@ classdef BistRunner < handle
 
         case "#"
           # Comment block
+          out.type = "comment";
 
         default
           # Unrecognized block type: no further parsing
@@ -584,32 +665,42 @@ classdef BistRunner < handle
       endif
     endfunction
 
-    function out = parse_shared_block (code)
-      # Separate initialization code from variables
-      # vars are the first line; code is the remaining lines
-      ix = find (code == "\n");
-      if isempty (ix)
-        vars = code;
-        code = "";
+    function out = print_test_results (this, rslt, file)
+      persistent signal_empty = "????? ";
+      r = rslt;
+      if (r.n_test || r.n_xfail || r.n_xfail_bug || r.n_skip)
+        if (r.n_xfail || r.n_xfail_bug)
+          if (r.n_xfail && r.n_xfail_bug)
+            printf ("PASSES %d out of %d test%s (%d known failure%s; %d known bug%s)\n",
+                    r.n_pass, r.n_test, ifelse (r.n_test > 1, "s", ""),
+                    r.n_xfail, ifelse (r.n_xfail > 1, "s", ""),
+                    r.n_xfail_bug, ifelse (r.n_xfail_bug > 1, "s", ""));
+          elseif (r.n_xfail)
+            printf ("PASSES %d out of %d test%s (%d known failure%s)\n",
+                    r.n_pass, r.n_test, ifelse (r.n_test > 1, "s", ""),
+                    r.n_xfail, ifelse (r.n_xfail > 1, "s", ""));
+          elseif (__xbug)
+            printf ("PASSES %d out of %d test%s (%d known bug%s)\n",
+                    r.n_pass, r.n_test, ifelse (r.n_test > 1, "s", ""),
+                    r.n_xfail_bug, ifelse (r.n_xfail_bug > 1, "s", ""));
+          endif
+        else
+          printf ("PASSES %d out of %d test%s\n", r.n_pass, r.n_test,
+                 ifelse (r.n_test > 1, "s", ""));
+        endif
+        if (r.n_skip_feature)
+          printf ("Skipped %d test%s due to missing features\n", r.n_skip_feature,
+                  ifelse (r.n_skip_feature > 1, "s", ""));
+        endif
+        if (r.n_skip_runtime)
+          printf ("Skipped %d test%s due to run-time conditions\n", r.n_skip_runtime,
+                  ifelse (r.n_skip_runtime > 1, "s", ""));
+        endif
       else
-        vars = code(1:ix(1)-1);
-        code = code(ix(1):end);
-      endif
-
-      # Strip comments from variables
-      ix = find (vars == "%" | vars == "#");
-      if ! isempty (ix)
-        vars = vars(1:ix(1)-1);
-      endif
-
-      vars = regexp (vars, "\s+", "split");
-      out.vars = vars;
-      out.code = code;
+        printf ("%s%s has no tests available\n", signal_empty, file);
+      endif      
     endfunction
 
-    function out = parse_test_definitions (this)
-      % Extract the test definitions from the file's source code
-    endfunction
   endmethods
 
 endclassdef

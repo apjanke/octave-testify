@@ -50,6 +50,8 @@ classdef BistRunResult
     n_really_fail
     % List of files that had no tests (cellstr row vector)
     files_with_no_tests
+    % Count of tests that were skipped for any reason
+    n_skip
   end
   
   methods
@@ -87,6 +89,10 @@ classdef BistRunResult
     
     function out = get.n_really_fail (this)
       out = this.n_fail - this.n_xfail - this.n_xfail_bug - this.n_regression;
+    endfunction
+
+    function out = get.n_skip (this)
+      out = this.n_skip_feature + this.n_skip_runtime;
     endfunction
 
     function out = get.files_with_no_tests (this)
