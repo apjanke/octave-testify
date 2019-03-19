@@ -18,6 +18,8 @@
 
 classdef BistRunner < handle
   %BISTRUNNER Runs BISTs for a single source file
+  %
+  % This is basically the implementation for the test2() function.
 
   properties
     % The source code file the tests are drawn from. This may be an absolute
