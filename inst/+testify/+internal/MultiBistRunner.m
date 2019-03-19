@@ -207,7 +207,7 @@ function print_pass_fail (r)
       printf ("\n%71s %3d", "REGRESSION", r.n_regression);
     endif
     if (r.n_xfail_bug > 0)
-      printf ("\n%71s %3d", "(reported bug) XFAIL", n.xfail_bug);
+      printf ("\n%71s %3d", "(reported bug) XFAIL", r.n_xfail_bug);
     endif
     if (r.n_xfail > 0)
       printf ("\n%71s %3d", "(expected failure) XFAIL", r.n_xfail);

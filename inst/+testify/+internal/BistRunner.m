@@ -205,7 +205,7 @@ classdef BistRunner < handle
       	this.emit ("%s????? %s has no tests\n", this.file);
       	return
       endif
-      if this.verbose
+      if this.verbose > 0
         fprintf (">>>>> %s\n", this.file);
       endif
       blocks = this.parse_test_code (test_code);
@@ -250,7 +250,7 @@ classdef BistRunner < handle
                   else
                     bug_id_display = block.bug_id;
                     if (all (isdigit (block.bug_id)))
-                      bug_id_display = ["https://octave.org/testfailure/?" __bug_id];
+                      bug_id_display = ["https://octave.org/testfailure/?" block.bug_id];
                     endif
                     if (block.fixed_bug)
                       rslt.n_regression += 1;
@@ -267,7 +267,7 @@ classdef BistRunner < handle
               end_try_catch
 
             case "shared"
-              workspace.add_vars (block.vars);
+              workspace = testify.internal.BistWorkspace (block.vars);
 
             case "function"
               try
@@ -422,10 +422,16 @@ classdef BistRunner < handle
           if ! isempty (ix)
             vars_line = vars_line(1:ix(1)-1);
           endif
-          
-          vars = regexp (vars_line, '\s*,\s*', "split");
-          vars = regexprep (vars, '\s+$', "");
-          vars = regexprep (vars, '^\s+', "");
+          vars_line = regexprep (vars_line, '\s+$', "");
+          vars_line = regexprep (vars_line, '^\s+', "");
+
+          if isempty (vars_line)
+            vars = {};
+          else
+            vars = regexp (vars_line, '\s*,\s*', "split");
+            vars = regexprep (vars, '\s+$', "");
+            vars = regexprep (vars, '^\s+', "");
+          endif
           out.vars = vars;
           out.code = code;
 
