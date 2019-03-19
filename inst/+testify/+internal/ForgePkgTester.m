@@ -210,7 +210,7 @@ classdef ForgePkgTester < handle
       installer = testify.internal.ForgePkgInstaller;
       rslt = installer.install (pkg_name);
       if ! rslt.success
-        say ("Package install failure (dependency): %s: %s\n", pkg_name, err.message);
+        say ("Package install failure (dependency): %s: %s\n", pkg_name, rslt.error_message);
         this.dep_install_failures{end+1} = pkg_name;
         return
       endif
