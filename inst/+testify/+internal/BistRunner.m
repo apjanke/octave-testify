@@ -215,7 +215,11 @@ classdef BistRunner < handle
 
     function restore_diary_state (this, state)
       diary (state.file);
-      diary (state.status);
+      if state.status
+        diary on
+      else
+        diary off
+      endif
     endfunction
 
     function out = run_tests (this)
