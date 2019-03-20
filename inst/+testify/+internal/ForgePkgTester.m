@@ -340,42 +340,6 @@ classdef ForgePkgTester < handle
       endfor    
     endfunction
     
-    function display_log_header (this)
-      host = testify.internal.Util.safe_hostname;
-      fprintf ("Tests run on %s at %s\n", host, datestr (now));
-      ver
-      if ismac
-        [status, sys_info] = system ("sw_vers");
-        fprintf ("macOS System Info:\n");
-        fprintf ("%s", sys_info);
-        [status, xcode_info] = system ("xcodebuild -version");
-        fprintf ("%s", xcode_info);
-      endif
-      if isunix && exist ("/etc/os-release", "file")
-        txt = fileread ("/etc/os-release");
-        fprintf ("Unix System Info (os-release):\n");
-        fprintf ("%s", txt);
-      endif
-      if ispc
-        [status, sys_info] = system ("systeminfo");
-        if status == 0
-          fprintf ("Windows System Info:\n");
-          fprintf ("%s", sys_info);
-        endif
-      endif
-      fprintf ("\n");
-      fprintf ("Environment Variables:\n");
-      env_var_displayer = testify.internal.EnvVarDisplayer;
-      env_var_displayer.display_redacted_env_vars;
-      fprintf ("\n");
-      if isunix
-        [status, lc_info] = system ("locale");
-        fprintf ("Locale:\n");
-        fprintf ("%s", lc_info);
-        fprintf ("\n");
-      endif
-    endfunction
-
     function display_results (this)
       function print_pkgs_one_per_line (pkg_names)
         for i = 1:numel (pkg_names)
@@ -437,6 +401,14 @@ classdef ForgePkgTester < handle
         fprintf ("\n");
       endif
     endfunction
+
+  function display_log_header (this)
+    host = testify.internal.Util.safe_hostname;
+    fprintf ("Tests run on %s at %s\n", host, datestr (now));
+    fprintf ("\n");
+    testify.internal.LogHelper.display_system_info;
+  endfunction
+
   endmethods
 
 endclassdef

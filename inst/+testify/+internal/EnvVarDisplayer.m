@@ -87,7 +87,7 @@ classdef EnvVarDisplayer
       out = sort (out);
     endfunction
     
-    function out = display_redacted_env_vars (this)
+    function out = display_redacted_env_vars (this, fid = stdout)
       vars = this.get_env_var_names;
       for i_var = 1:numel (vars)
         var = vars{i_var};
@@ -101,7 +101,7 @@ classdef EnvVarDisplayer
         if regexpi (var, this.secret_redaction_pattern)
           disp_str = "<redacted>";
         endif
-        fprintf ('%s=%s\n', var, disp_str);
+        fprintf (fid, "%s=%s\n", var, disp_str);
       endfor
     endfunction
   endmethods

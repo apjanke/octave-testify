@@ -32,6 +32,7 @@ function varargout = __run_test_suite2__ (fcndirs, fixedtestdirs, topsrcdir = []
 
   [top_log_file, detail_log_file, log_location] = pick_log_files;
   fprintf ("Logging to: %s\n", log_location);
+  print_log_header (top_log_file);
 
   t0 = tic;
 
@@ -74,6 +75,15 @@ function varargout = __run_test_suite2__ (fcndirs, fixedtestdirs, topsrcdir = []
     varargout = { rslts };
   endif
 
+endfunction
+
+function print_log_header (log_file)
+  host = testify.internal.Util.safe_hostname;
+  fid = fopen2 (log_file, "w");
+  fprintf (fid, "Tests run on %s at %s\n", host, datestr (now));
+  fprintf (fid, "\n");
+  testify.internal.LogHelper.display_system_info (fid);
+  fclose (fid);
 endfunction
 
 function [top_log_file, detail_log_file, log_location] = pick_log_files ()
