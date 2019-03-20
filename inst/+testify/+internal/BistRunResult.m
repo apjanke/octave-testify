@@ -40,6 +40,9 @@ classdef BistRunResult
     files_with_tests = {}
     % List of files with failed tests (cellstr row vector)
     failed_files = {}
+
+    % Total elapsed wall time for test execution
+    elapsed_wall_time = 0;
   endproperties
   
   properties (Dependent = true)
@@ -122,6 +125,7 @@ classdef BistRunResult
       out.files_processed = unique([A.files_processed B.files_processed]);
       out.files_with_tests = unique([A.files_with_tests B.files_with_tests]);
       out.failed_files = unique([A.failed_files B.failed_files]);
+      out.elapsed_wall_time = A.elapsed_wall_time + B.elapsed_wall_time;
     endfunction
     
     function disp (this)

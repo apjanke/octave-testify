@@ -313,6 +313,7 @@ classdef BistRunner < handle
             this.clear_stashed_workspace;
             this.stash_test_workspace ("before", workspace.workspace);
           endif
+          t0 = tic;
 
           switch block.type
 
@@ -408,6 +409,8 @@ classdef BistRunner < handle
 
           endswitch
 
+          te = toc (t0);
+          rslt.elapsed_wall_time = te;
           this.fprintf_verbose ("  -> success=%d, msg=%s\n", success, msg);
 
           if block.is_test
