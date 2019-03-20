@@ -638,11 +638,14 @@ classdef BistRunner < handle
             ix2 = index (tmp, ">");
             if (ix2)
               bug_id = tmp(1:ix2-1);
+              fixed_bug = false;
               if (strncmp (bug_id, "*", 1))
                 bug_id = bug_id(2:end);
                 fixed_bug = true;
               endif
               feat_line = feat_line(1:ix1-1);
+              out.bug_id = bug_id;
+              out.fixed_bug = fixed_bug;
             endif
           endif
           ix = index (feat_line, ";");
@@ -667,6 +670,8 @@ classdef BistRunner < handle
 
         case "xtest"
           [bug_id, code, fixed_bug] = this.find_bugid_in_assert (contents);
+          out.bug_id = bug_id;
+          out.fixed_bug = fixed_bug;
           out.is_test = true;
           out.is_xtest = true;
           out.code = code;
