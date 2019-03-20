@@ -28,33 +28,6 @@
 ## [pass, fail, xfail, xbug, skip, rtskip, regress, failed_files] = __run_test_suite2__ (...)
 function varargout = __run_test_suite2__ (fcndirs, fixedtestdirs, topsrcdir = [], topbuilddir = [])
 
-  # Pick tests to run
-
-  t0 = tic;
-  testsdir = __octave_config_info__ ("octtestsdir");
-  libinterptestdir = fullfile (testsdir, "libinterp");
-  liboctavetestdir = fullfile (testsdir, "liboctave");
-  fcnfiledir = __octave_config_info__ ("fcnfiledir");
-  if (nargin < 1)
-    fcndirs = { liboctavetestdir, libinterptestdir, fcnfiledir };
-  else
-    fcndirs = cellstr (fcndirs);
-  endif
-  fixedtestdir = fullfile (testsdir, "fixed");
-  if (nargin < 2)
-    fixedtestdirs = { fixedtestdir };
-  else
-    fixedtestdirs = cellstr (fixedtestdirs);
-  endif
-  ## FIXME: These names don't really make sense if we are running
-  ##        tests for an installed copy of Octave.
-  if (isempty (topsrcdir))
-    topsrcdir = fcnfiledir;
-  endif
-  if (isempty (topbuilddir))
-    topbuilddir = testsdir;
-  endif
-
   # Run tests, saving results to log
 
   log_file = pick_log_file;
