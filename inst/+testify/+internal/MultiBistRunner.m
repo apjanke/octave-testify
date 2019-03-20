@@ -429,6 +429,8 @@ function print_pass_fail (r)
 endfunction
 
 function print_test_file_name (nm)
+  nm = strrep (nm, fullfile (matlabroot, "share", "octave", version, ...
+    "etc", "tests"), "<Octave/tests>");
   nm = strrep (nm, fullfile (matlabroot, "share", "octave", version), "<Octave/share>");
   nm = strrep (nm, matlabroot, "<Octave>");
   filler = repmat (".", 1, 60-length (nm));
