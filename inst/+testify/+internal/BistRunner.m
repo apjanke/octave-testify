@@ -681,7 +681,7 @@ classdef BistRunner < handle
           # Comment block
           out.type = "comment";
 
-        default
+        otherwise
           # Unrecognized block type: no further parsing
           # But treat it as a test!?!?
           out.is_test = true;
