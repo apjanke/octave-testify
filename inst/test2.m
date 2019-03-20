@@ -150,7 +150,8 @@ function varargout = test2 (name, varargin)
   ## Special-case behaviors
 
   if isequal (opts.mode, "explain")
-    emit_output_explanation (fid);
+    dummy_runner = testify.internal.BistRunner;
+    dummy_runner.print_results_format_key;
     return;
   endif
 
@@ -230,6 +231,15 @@ function out = parse_args (name, args)
   shuffle_flag = [];
   save_workspace = false;
   
+  # Signature friendliness hack
+  if ismember (name, {"explain", "-explain"})
+    switch name
+      case {"explain", "-explain"}
+        mode = "explain"
+    endswitch
+    name = [];
+  endif
+
   i = 1;
   while i <= numel (args)
     arg = args{i};
@@ -331,26 +341,6 @@ function out = parse_args (name, args)
   out.shuffle_seed = shuffle_seed;
   out.shuffle = shuffle;
   out.save_workspace = save_workspace;
-endfunction
-
-function emit_output_explanation (fid)
-  ## Output from test is prefixed by a "key" to quickly understand the issue.
-  persistent signal_fail  = "!!!!! ";
-  persistent signal_empty = "????? ";
-  persistent signal_block = "***** ";
-  persistent signal_file  = ">>>>> ";
-  persistent signal_skip  = "----- ";
-
-  emit (fid, "# %s new test file\n", signal_file);
-  emit (fid, "# %s no tests in file\n", signal_empty);
-  emit (fid, "# %s test had an unexpected result\n", signal_fail);
-  emit (fid, "# %s test was skipped\n", signal_skip);
-  emit (fid, "# %s code for the test\n\n", signal_block);
-  emit (fid, "# Search for the unexpected results in the file\n");
-  emit (fid, "# then page back to find the filename which caused it.\n");
-  emit (fid, "# The result may be an unexpected failure (in which\n");
-  emit (fid, "# case an error will be reported) or an unexpected\n");
-  emit (fid, "# success (in which case no error will be reported).\n");  
 endfunction
 
 function emit (fid, format, varargin)

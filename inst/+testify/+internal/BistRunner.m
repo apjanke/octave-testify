@@ -739,6 +739,26 @@ classdef BistRunner < handle
       endif
     endfunction
 
+    function out = print_results_format_key (this, fid = stdout)
+      ## Output from test is prefixed by a "key" to quickly understand the issue.
+      persistent signal_fail  = "!!!!! ";
+      persistent signal_empty = "????? ";
+      persistent signal_block = "***** ";
+      persistent signal_file  = ">>>>> ";
+      persistent signal_skip  = "----- ";
+
+      fprintf (fid, "# %s new test file\n", signal_file);
+      fprintf (fid, "# %s no tests in file\n", signal_empty);
+      fprintf (fid, "# %s test had an unexpected result\n", signal_fail);
+      fprintf (fid, "# %s test was skipped\n", signal_skip);
+      fprintf (fid, "# %s code for the test\n\n", signal_block);
+      fprintf (fid, "# Search for the unexpected results in the file\n");
+      fprintf (fid, "# then page back to find the filename which caused it.\n");
+      fprintf (fid, "# The result may be an unexpected failure (in which\n");
+      fprintf (fid, "# case an error will be reported) or an unexpected\n");
+      fprintf (fid, "# success (in which case no error will be reported).\n");  
+    endfunction
+
     function out = print_test_results (this, rslt, file, fid)
       if nargin < 4 || isempty (fid); fid = stdout; endif
 
