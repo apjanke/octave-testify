@@ -591,7 +591,7 @@ classdef BistRunner < handle
             out.error_message = "missing function name";
           else
             out.function_name = contents(ix_fcn_name(1):ix_fcn_name(2));
-            out.code = contents;
+            out.code = ["function " contents];
           endif
 
         case "endfunction"
