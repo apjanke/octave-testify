@@ -43,9 +43,19 @@ classdef MultiBistRunner < handle
     fail_fast = false;
     % Whether to save out copies of the workspace upon test failure
     save_workspace_on_failure = false;
+    % File handle to log low-level output to
+    log_fid = []
   endproperties
 
   methods
+
+    function this = MultiBistRunner (log_fid)
+      if nargin == 0
+        return
+      endif
+      this.log_fid = log_fid;
+    endfunction
+
     function add_file_or_directory (this, file, tag)
       if nargin < 3 || isempty (tag); tag = file; end
       if isfolder (file)
@@ -315,6 +325,9 @@ classdef MultiBistRunner < handle
           if this.file_has_tests (file)
             print_test_file_name (file);
 		        runner = testify.internal.BistRunner (file);
+            if ! isempty (this.log_fid)
+              runner.fid = this.log_fid;
+            endif
             runner.fail_fast = this.fail_fast;
             runner.save_workspace_on_failure = this.save_workspace_on_failure;
          	 	runner.output_mode = "quiet";
