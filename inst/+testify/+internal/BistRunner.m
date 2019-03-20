@@ -239,6 +239,7 @@ classdef BistRunner < handle
       	this.emit ("%s????? %s has no tests\n", this.file);
       	return
       endif
+      this.emit ("\n");
       this.emit (">>>>> %s\n", this.file);
       blocks = this.parse_test_code (test_code);
 
