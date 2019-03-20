@@ -265,11 +265,21 @@ classdef MultiBistRunner < handle
       fixedtestdirs = { fixedtestdir };
 
       for i = 1:numel (fcndirs)
-        this.add_directory (fcndirs{i});
+        this.add_directory (fcndirs{i}, "Octave builtins: fcndirs");
       endfor
       for i = 1:numel (fixedtestdirs)
-        this.add_directory (fixedtestdirs{i});
+        this.add_directory (fixedtestdirs{i}, "Octave builtins: fixed tests");
       endfor
+    endfunction
+
+    function add_octave_standard_library (this)
+      m_dir = fullfile (matlabroot, "share", "octave", version, "m");
+      this.add_directory (m_dir, "Octave standard library");
+    endfunction
+
+    function add_octave_site_m_files (this)
+      m_dir = fullfile (matlabroot, "share", "octave", "site", "m");
+      this.add_directory (m_dir, "Octave site dir");
     endfunction
 
     function out = maybe_shuffle_thing (this, data, name)
