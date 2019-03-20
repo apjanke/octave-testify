@@ -28,6 +28,8 @@
 ## [pass, fail, xfail, xbug, skip, rtskip, regress, failed_files] = __run_test_suite2__ (...)
 function varargout = __run_test_suite2__ (fcndirs, fixedtestdirs, topsrcdir = [], topbuilddir = [])
 
+  # Pick tests to run
+
   t0 = tic;
   testsdir = __octave_config_info__ ("octtestsdir");
   libinterptestdir = fullfile (testsdir, "libinterp");
@@ -53,7 +55,9 @@ function varargout = __run_test_suite2__ (fcndirs, fixedtestdirs, topsrcdir = []
     topbuilddir = testsdir;
   endif
 
-  pso = page_screen_output ();
+  # Run tests, saving results to log
+
+  orig_page_screen_output = page_screen_output ();
   orig_wstate = warning ();
   logfile = make_absolute_filename ("fntests.log");
   unwind_protect
@@ -81,7 +85,7 @@ function varargout = __run_test_suite2__ (fcndirs, fixedtestdirs, topsrcdir = []
   unwind_protect_cleanup
     warning ("off", "all");
     warning (orig_wstate);
-    page_screen_output (pso);
+    page_screen_output (orig_page_screen_output);
   end_unwind_protect
 
   if nargout > 0
