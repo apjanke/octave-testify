@@ -57,16 +57,17 @@ function varargout = __run_test_suite2__ (fcndirs, fixedtestdirs, topsrcdir = []
 
   # Run tests, saving results to log
 
+  log_file = pick_log_file;
+
   orig_page_screen_output = page_screen_output ();
   orig_wstate = warning ();
-  logfile = make_absolute_filename ("fntests.log");
   unwind_protect
     page_screen_output (false);
     warning ("on", "quiet");
     warning ("off", "Octave:deprecated-function");
     warning ("off", "Octave:legacy-function");
     rslts = testify.internal.BistRunResult;
-    fid = fopen2 (logfile, "wt");
+    fid = fopen2 (log_file, "wt");
     unwind_protect
       test2_refactor ("", "explain", "-log-fid", fid);
 
@@ -80,6 +81,8 @@ function varargout = __run_test_suite2__ (fcndirs, fixedtestdirs, topsrcdir = []
       reporter = testify.internal.BistResultsReporter;
       reporter.print_results_summary (rslts);
     unwind_protect_cleanup
+      printf ("\n");
+      printf ("Log file: %s\n", log_file);
       fclose (fid);
     end_unwind_protect
   unwind_protect_cleanup
@@ -94,6 +97,18 @@ function varargout = __run_test_suite2__ (fcndirs, fixedtestdirs, topsrcdir = []
 
 endfunction
 
+function out = pick_log_file ()
+  log_dir = fullfile (testify.internal.Util.testify_data_dir, ...
+    "logs", "test-suite");
+  mkdir (log_dir);
+  log_base = sprintf ("testsuite-%s-%s-%s.log", ...
+    testify.internal.Util.safe_hostname, ...
+    testify.internal.Util.os_name,
+    datestr (now, "yyyymmdd_HHMMSS"));
+  log_file = fullfile (log_dir, log_base);
+  log_file = make_absolute_filename (log_file);
+  out = log_file;
+endfunction
 
 ## No test coverage for internal function.  It is tested through calling fcn.
 %!assert (1)
