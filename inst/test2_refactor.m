@@ -132,13 +132,6 @@
 
 function varargout = test2_refactor (name, varargin)
 
-  ## Output from test is prefixed by a "key" to quickly understand the issue.
-  persistent signal_fail  = "!!!!! ";
-  persistent signal_empty = "????? ";
-  persistent signal_block = "***** ";
-  persistent signal_file  = ">>>>> ";
-  persistent signal_skip  = "----- ";
-
   ## Parse inputs
   if nargin < 1
     print_usage ();
@@ -332,6 +325,7 @@ function out = parse_args (name, args)
 endfunction
 
 function emit_output_explanation (fid)
+  ## Output from test is prefixed by a "key" to quickly understand the issue.
   persistent signal_fail  = "!!!!! ";
   persistent signal_empty = "????? ";
   persistent signal_block = "***** ";
