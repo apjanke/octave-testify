@@ -81,6 +81,10 @@ classdef Util
       fclose (fid);
     endfunction
 
+    function out = testify_data_dir ()
+      out = fullfile (getenv("HOME"), "octave", "testify");
+    endfunction
+
   endmethods
 
 endclassdef
