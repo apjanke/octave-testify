@@ -76,9 +76,9 @@ classdef Util
     endfunction
 
     function filewrite (filename, str)
-    fid = fopen2 (filename, "w");
-    fprintf (fid, "%s", str);
-    fclose (fid);
+	    fid = fopen2 (filename, "w");
+	    fprintf (fid, "%s", str);
+	    fclose (fid);
     endfunction
 
   endmethods
