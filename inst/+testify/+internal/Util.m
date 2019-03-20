@@ -85,6 +85,13 @@ classdef Util
       out = fullfile (getenv("HOME"), "octave", "testify");
     endfunction
 
+    function flush_diary ()
+      [status, file] = diary;
+      if status
+        diary off
+        diary on
+      endif
+    endfunction
   endmethods
 
 endclassdef
