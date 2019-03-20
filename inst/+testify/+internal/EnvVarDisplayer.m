@@ -19,10 +19,10 @@
 classdef EnvVarDisplayer
   
   properties
-    secret_redaction_pattern = 'pass|token|secret'
+    secret_redaction_pattern = "pass|token|secret"
     ugly_var_patterns = {
-      '^LESS_TERMCAP'
-      'LSCOLORS'
+      "^LESS_TERMCAP"
+      "LSCOLORS"
     }
   endproperties
 
@@ -48,7 +48,7 @@ classdef EnvVarDisplayer
     endfunction
   
     function out = get_env_var_names_using_java (this)
-      env = javaMethod ('getenv', 'java.lang.System');
+      env = javaMethod ("getenv", "java.lang.System");
       keys = env.keySet;
       it = keys.iterator;
       out = {};
@@ -70,7 +70,7 @@ classdef EnvVarDisplayer
       endif
       lines = regexp(txt, '\r?\n', 'split');
       for i = 1:numel (lines)
-        [ix,tok] = regexp(lines{i}, '^(\w+)=(.*)$', 'start', 'tokens');
+        [ix,tok] = regexp(lines{i}, '^(\w+)=(.*)$', "start", "tokens");
         if isempty (ix)
           continue
         endif
@@ -95,11 +95,11 @@ classdef EnvVarDisplayer
         disp_str = val;
         for i_pat = 1:numel (this.ugly_var_patterns)
           if regexp (var, this.ugly_var_patterns{i_pat})
-            disp_str = '<suppressed>';
+            disp_str = "<suppressed>";
           endif
         endfor
         if regexpi (var, this.secret_redaction_pattern)
-          disp_str = '<redacted>';
+          disp_str = "<redacted>";
         endif
         fprintf ('%s=%s\n', var, disp_str);
       endfor
