@@ -419,22 +419,22 @@ function print_pass_fail (rslts)
   if (r.n_test > 0)
     printf (" PASS   %4d/%-4d", r.n_pass, r.n_test);
     if (r.n_really_fail > 0)
-      printf ("\n%71s %3d", "FAIL ", r.n_really_fail);
+      printf ("\n%68s   %4d", "FAIL", r.n_really_fail);
     endif
     if (r.n_regression > 0)
-      printf ("\n%71s %3d", "REGRESSION", r.n_regression);
+      printf ("\n%68s   %4d", "REGRESSION", r.n_regression);
     endif
     if (r.n_xfail_bug > 0)
-      printf ("\n%71s %3d", "(reported bug) XFAIL", r.n_xfail_bug);
+      printf ("\n%68s   %4d", "(reported bug) XFAIL", r.n_xfail_bug);
     endif
     if (r.n_xfail > 0)
-      printf ("\n%71s %3d", "(expected failure) XFAIL", r.n_xfail);
+      printf ("\n%68s   %4d", "(expected failure) XFAIL", r.n_xfail);
     endif
     if (r.n_skip_feature > 0)
-      printf ("\n%71s %3d", "(missing feature) SKIP", r.n_skip_feature);
+      printf ("\n%68s   %4d", "(missing feature) SKIP", r.n_skip_feature);
     endif
     if (r.n_skip_runtime > 0)
-      printf ("\n%71s %3d", "(run-time condition) SKIP", r.n_skip_runtime);
+      printf ("\n%68s   %4d", "(run-time condition) SKIP", r.n_skip_runtime);
     endif
   endif
   puts ("\n");
