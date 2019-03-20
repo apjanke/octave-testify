@@ -94,3 +94,5 @@ Testify is primarily written and maintained by [Andrew Janke](https://github.com
 ## Acknowledgments
 
 Thanks to [Polkadot Stingray](https://www.youtube.com/watch?v=3ad4NsEy1tg), [BAND-MAID](https://bandmaid.tokyo/), and [Brian Eno](https://en.wikipedia.org/wiki/Ambient_1:_Music_for_Airports) for powering my coding.
+
+Thanks to [Mike Miller](https://github.com/mtmiller) and and [Colin B. Macdonald](https://github.com/cbm755) for taking an interest in this project.
