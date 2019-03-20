@@ -305,7 +305,6 @@ classdef MultiBistRunner < handle
       out = testify.internal.BistRunResult;
       for i_fileset = 1:numel (ix_filesets)
         [tag, files] = this.files{ix_filesets(i_fileset),:};
-        printf ("Processing files for %s:\n\n", tag);
         files = this.maybe_shuffle_thing (files, "files");
         rslts = testify.internal.BistRunResult;
         abort = false;
