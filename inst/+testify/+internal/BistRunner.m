@@ -207,6 +207,17 @@ classdef BistRunner < handle
       endif
     endfunction
 
+    function out = grab_diary_state (this)
+      [status, file] = diary;
+      out.status = status;
+      out.file = file;
+    endfunction
+
+    function restore_diary_state (this, state)
+      diary (state.file);
+      diary (state.status);
+    endfunction
+
     function out = run_tests (this)
       %RUN_TESTS Run the tests found in this file
       persistent signal_fail  = "!!!!! ";
@@ -257,99 +268,105 @@ classdef BistRunner < handle
           endif
           t0 = tic;
 
-          switch block.type
+          orig_diary_state = this.grab_diary_state;
 
-            case { "test", "xtest", "assert", "fail" }
-              [success, rslt, msg] = run_test_code (this, block, workspace, rslt);
+          unwind_protect
+            switch block.type
 
-            case "testif"
-              have_feature = __have_feature__ (block.feature);
-              if have_feature
-                if isempty (block.runtime_feature_test) || eval (block.runtime_feature_test)
-                  [success, rslt, msg] = run_test_code (this, block, workspace, rslt);
+              case { "test", "xtest", "assert", "fail" }
+                [success, rslt, msg] = run_test_code (this, block, workspace, rslt);
+
+              case "testif"
+                have_feature = __have_feature__ (block.feature);
+                if have_feature
+                  if isempty (block.runtime_feature_test) || eval (block.runtime_feature_test)
+                    [success, rslt, msg] = run_test_code (this, block, workspace, rslt);
+                  else
+                    rslt.n_skip_runtime += 1;
+                    msg = [signal_skip "skipped test (runtime test)"];
+                  endif
                 else
-                  rslt.n_skip_runtime += 1;
-                  msg = [signal_skip "skipped test (runtime test)"];
+                  rslt.n_skip_feature += 1;
+                  msg = [signal_skip "skipped test (missing feature)"];
                 endif
-              else
-                rslt.n_skip_feature += 1;
-                msg = [signal_skip "skipped test (missing feature)"];
-              endif
 
-            case "shared"
-              workspace = testify.internal.BistWorkspace (block.vars);
+              case "shared"
+                workspace = testify.internal.BistWorkspace (block.vars);
 
-            case "function"
-              try
-                eval (block.code);
-                functions_to_clear{end+1} = block.function_name;
-              catch err
-                success = false;
-                msg = [signal_fail "test failed: syntax error in function definition\n" err.message];
-              end_try_catch
-
-            case "endfunction"
-              % NOP
-
-            case "demo"
-              % Each demo gets evaled in its own workspace, with no shared variables
-              demo_ws = testify.internal.BistWorkspace;
-              if this.run_demo
+              case "function"
                 try
-                  demo_ws.eval (block.code);
+                  eval (block.code);
+                  functions_to_clear{end+1} = block.function_name;
                 catch err
                   success = false;
-                  msg = [signal_fail "demo failed\n" err.message];
+                  msg = [signal_fail "test failed: syntax error in function definition\n" err.message];
                 end_try_catch
-              else
-                msg = [signal_skip "demo skipped\n"];
-              endif
 
-            case "error"
-              try
-                workspace.eval (block.code);
-                % No error raised - that's a test failure
-                success = false;
-                msg = [signal_fail "no error raised."];
-              catch err
-                msg = "";
-                [ok, diagnostic] = this.error_matches_expected (err, block);
-                if ! ok
-                  success = false;
-                  msg = [signal_fail "Incorrect error raised: " diagnostic];
+              case "endfunction"
+                % NOP
+
+              case "demo"
+                % Each demo gets evaled in its own workspace, with no shared variables
+                demo_ws = testify.internal.BistWorkspace;
+                if this.run_demo
+                  try
+                    demo_ws.eval (block.code);
+                  catch err
+                    success = false;
+                    msg = [signal_fail "demo failed\n" err.message];
+                  end_try_catch
+                else
+                  msg = [signal_skip "demo skipped\n"];
                 endif
-              end_try_catch
 
-            case "warning"
-              lastwarn ("");
-              orig_warn_state = warning ("query", "quiet");
-              warning ("on", "quiet");
-              unwind_protect
+              case "error"
                 try
                   workspace.eval (block.code);
-                  [warn_msg, warn_id] = lastwarn;
-                  [ok, diagnostic] = this.warning_matches_expected (warn_msg, warn_id, block);
+                  % No error raised - that's a test failure
+                  success = false;
+                  msg = [signal_fail "no error raised."];
+                catch err
+                  msg = "";
+                  [ok, diagnostic] = this.error_matches_expected (err, block);
                   if ! ok
                     success = false;
-                    msg = [signal_fail "Incorrect warning raised: " diagnostic];
+                    msg = [signal_fail "Incorrect error raised: " diagnostic];
                   endif
-                catch err
-                  success = false;
-                  msg = [signal_fail "error raised: " err.message];
                 end_try_catch
-              unwind_protect_cleanup
+
+              case "warning"
                 lastwarn ("");
-                warning (orig_warn_state.state, "quiet");
-              end_unwind_protect
+                orig_warn_state = warning ("query", "quiet");
+                warning ("on", "quiet");
+                unwind_protect
+                  try
+                    workspace.eval (block.code);
+                    [warn_msg, warn_id] = lastwarn;
+                    [ok, diagnostic] = this.warning_matches_expected (warn_msg, warn_id, block);
+                    if ! ok
+                      success = false;
+                      msg = [signal_fail "Incorrect warning raised: " diagnostic];
+                    endif
+                  catch err
+                    success = false;
+                    msg = [signal_fail "error raised: " err.message];
+                  end_try_catch
+                unwind_protect_cleanup
+                  lastwarn ("");
+                  warning (orig_warn_state.state, "quiet");
+                end_unwind_protect
 
-            case "comment"
-              % NOP
+              case "comment"
+                % NOP
 
-            default
-              # Unknown block type
-              msg = [signal_skip "skipped test (unknown BIST block type: " block.type ")\n"];
+              otherwise
+                # Unknown block type
+                msg = [signal_skip "skipped test (unknown BIST block type: " block.type ")\n"];
 
           endswitch
+          unwind_protect_cleanup
+            this.restore_diary_state (orig_diary_state)
+          end_unwind_protect
 
           te = toc (t0);
           rslt.elapsed_wall_time = te;
