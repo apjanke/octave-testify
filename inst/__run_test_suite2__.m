@@ -30,7 +30,10 @@ function varargout = __run_test_suite2__ (fcndirs, fixedtestdirs, topsrcdir = []
 
   # Run tests, saving results to log
 
-  log_file = pick_log_file;
+  [top_log_file, detail_log_file, log_location] = pick_log_files;
+  fprintf ("Logging to: %s\n", log_location);
+
+  t0 = tic;
 
   orig_page_screen_output = page_screen_output ();
   orig_wstate = warning ();
@@ -40,12 +43,13 @@ function varargout = __run_test_suite2__ (fcndirs, fixedtestdirs, topsrcdir = []
     warning ("off", "Octave:deprecated-function");
     warning ("off", "Octave:legacy-function");
     rslts = testify.internal.BistRunResult;
-    fid = fopen2 (log_file, "wt");
+    diary (top_log_file)
+    diary on
+    log_fid = fopen2 (detail_log_file, "wt");
+    dummy_runner = testify.internal.BistRunner;
+    dummy_runner.print_results_format_key (log_fid);
     unwind_protect
-      test2_refactor ("", "explain", "-log-fid", fid);
-
-      ## TODO: This fid arg doesn't work. Fix it.
-      runner = testify.internal.MultiBistRunner (fid);
+      runner = testify.internal.MultiBistRunner (log_fid);
       runner.add_octave_builtins;
       runner.add_octave_standard_library;
       runner.add_octave_site_m_files;
@@ -56,13 +60,14 @@ function varargout = __run_test_suite2__ (fcndirs, fixedtestdirs, topsrcdir = []
       reporter.print_results_summary (rslts);
     unwind_protect_cleanup
       printf ("\n");
-      printf ("Log file: %s\n", log_file);
-      fclose (fid);
+      printf ("Log location: %s\n", log_location);
+      fclose (log_fid);
     end_unwind_protect
   unwind_protect_cleanup
     warning ("off", "all");
     warning (orig_wstate);
     page_screen_output (orig_page_screen_output);
+    diary off
   end_unwind_protect
 
   if nargout > 0
@@ -71,17 +76,21 @@ function varargout = __run_test_suite2__ (fcndirs, fixedtestdirs, topsrcdir = []
 
 endfunction
 
-function out = pick_log_file ()
+function [top_log_file, detail_log_file, log_location] = pick_log_files ()
   log_dir = fullfile (testify.internal.Util.testify_data_dir, ...
     "logs", "test-suite");
   mkdir (log_dir);
-  log_base = sprintf ("testsuite-%s-%s-%s.log", ...
+  log_run_dir_base = sprintf ("testsuite-%s-%s-%s", ...
     testify.internal.Util.safe_hostname, ...
     testify.internal.Util.os_name,
     datestr (now, "yyyymmdd_HHMMSS"));
-  log_file = fullfile (log_dir, log_base);
-  log_file = make_absolute_filename (log_file);
-  out = log_file;
+  log_run_dir = fullfile (log_dir, log_run_dir_base);
+  mkdir (log_run_dir);
+  log_location = log_run_dir;
+  top_log_file = fullfile (log_run_dir, "results.log");
+  top_log_file = make_absolute_filename (top_log_file);
+  detail_log_file = fullfile (log_run_dir, "details.log");
+  detail_log_file = make_absolute_filename (detail_log_file);
 endfunction
 
 ## No test coverage for internal function.  It is tested through calling fcn.

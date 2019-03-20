@@ -144,7 +144,7 @@ function varargout = test2 (name, varargin)
     fid = fopen2 (opts.log_file, "wt");
     RAII.logfile = onCleanup (@() fclose(fid));
   else
-    fid = opts.fid;
+    fid = stdout;
   endif
 
   ## Special-case behaviors
@@ -176,7 +176,9 @@ function varargout = test2 (name, varargin)
   runner.fail_fast = opts.fail_fast;
   runner.shuffle = opts.shuffle;
   runner.save_workspace_on_failure = opts.save_workspace;
-  # We want verbose output to the console
+  if ! isempty (opts.log_file)
+    runner.log_fids(end+1) = fid;
+  endif
   if isequal (opts.output_mode, "verbose")
     runner.log_fids = stdout;
   endif
@@ -196,21 +198,11 @@ function varargout = test2 (name, varargin)
     error ("Unimplemented test mode: %s", opts.mode);
   endif
 
-  if ! isempty (opts.log_file)
-    [log_fid] = fopen2 (opts.log_file, "w");
-    runner.log_fids(end+1) = log_fid;
-    RAII.log_fid = onCleanup (@() fclose (log_fid));
-  endif
-
   rslt = runner.run_tests;
 
-  if ! isempty (opts.log_file)
-    runner.print_test_results (rslt, file, log_fid);
-  endif
+  runner.print_test_results (rslt, file, fid);
 
-  if nargout == 0
-    runner.print_test_results (rslt);
-  else
+  if nargout > 0
     varargout = {rslt.n_fail, rslt};
   endif
 
