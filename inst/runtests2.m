@@ -20,7 +20,8 @@
 
 ## -*- texinfo -*-
 ## @deftypefn  {} {} runtests2 ()
-## @deftypefnx {} {} runtests2 (@var{directory})
+## @deftypefnx {} {} runtests2 (@var{target})
+## @deftypefnx {} {} runtests2 (@var{-<option>}, @var{arg}, @dots{})
 ## @deftypefnx {} {@var{success} =} runtests2 (@dots{})
 ## @deftypefnx {} {[@var{success}, @var{__info__}] =} runtests2 (@dots{})
 ## Execute built-in tests for all m-files in the specified @var{directory}.
@@ -28,8 +29,26 @@
 ## Test blocks in any C++ source files (@file{*.cc}) will also be executed
 ## for use with dynamically linked oct-file functions.
 ##
-## If no directory is specified, operate on all directories in Octave's search
-## path for functions.
+## @var{target} may be a file, directory, class, or function name. If @var{target}
+## starts with a "@", it is always interpreted as a class. Directories may be
+## either regular paths, or a directory that is on the Octave load path.
+##
+## Options:
+##
+##   -file <name>
+##   -dir <name>
+##   -class <name>        - Test a class
+##   -function <name>     - Test a function
+##   -pkg <name>          - Test an installed pkg package
+##   -search-path         - Test everything on the Octave search path
+##   -octave-builtins     - Test Octave's interpreter and built-in functions
+##   -shuffle             - Shuffle file sets and file orders
+##   -shuffle-seed <seed> - Shuffle file sets and file orders with given seed
+##   -fail-fast           - Abort the test run upon the first test failure
+##   -save-workspace      - Save test workspaces for failed tests
+##
+## If no target is specified, operates on all directories in Octave's search
+## path. (The same as -search-path.)
 ##
 ## When called with a single return value (@var{success}), return false if
 ## there were any unexpected test failures, otherwise return true.  An extra
@@ -42,168 +61,165 @@
 
 ## Author: jwe
 
-function [p, __info__] = runtests2 (directory)
+function [p, __rslts__] = runtests2 (varargin)
 
-  if (nargin == 0)
-    dirs = ostrsplit (path (), pathsep ());
-    do_class_dirs = true;
-  elseif (nargin == 1)
-    dirs = {canonicalize_file_name(directory)};
-    if (isempty (dirs{1}) || ! isfolder (dirs{1}))
-      ## Search for directory name in path
-      if (directory(end) == '/' || directory(end) == '\')
-        directory(end) = [];
-      endif
-      fullname = dir_in_loadpath (directory);
-      if (isempty (fullname))
-        error ("runtests2: DIRECTORY argument must be a valid pathname");
-      endif
-      dirs = {fullname};
-    endif
-    do_class_dirs = false;
-  else
-    print_usage ();
-  endif
+  # Parse inputs and find tests
 
-  rslts = testify.internal.BistRunResult;
-  for i = 1:numel (dirs)
-    d = dirs{i};
-    rslts += run_all_tests (d, do_class_dirs);
+  opts = parse_inputs (varargin);
+
+  runner = testify.internal.MultiBistRunner;
+  runner.shuffle = opts.shuffle;
+  runner.fail_fast = opts.fail_fast;
+  runner.save_workspace_on_failure = opts.save_workspace;
+  
+  targets = opts.targets;
+  if isempty (targets)
+    targets = struct ("type", "search_path", "item", []);
+  endif    
+  for i = 1:numel (targets)
+    t = targets(i);
+    switch t.type
+      case "auto"
+        runner.add_target_auto (t.item);
+      case "file"
+        runner.add_file (t.item);
+      case "dir"
+        runner.add_directory (t.item);
+      case "search_path"
+        runner.add_stuff_on_octave_search_path;
+      case "function"
+        runner.add_function (t.item);
+      case "class"
+        runner.add_class (t.item);
+      case "pkg"
+        runner.add_package (t.item);
+      case "installed_pkgs"
+        runner.add_installed_packages;
+      case "octave_builtins"
+        runner.add_octave_builtins;
+      otherwise
+        error ("Unsupported target type: %s", t.type);
+    endswitch
   endfor
 
-  if (nargout >= 1)
+  # Run tests and show results
+
+  rslts = runner.run_tests;
+  
+  reporter = testify.internal.BistResultsReporter;
+  reporter.print_results_summary (rslts);
+
+  # Package output
+
+  if nargout >= 1
     p = rslts.n_fail == 0;
   endif
-  if (nargout == 2)
-    __info__ = rslts;
+  if nargout >= 2
+    __rslts__ = rslts;
   endif
+
 endfunction
 
-function out = parse_options (options, defaults)
-  opts = defaults;
-  if iscell (options)
-    s = struct;
-    for i = 1:2:numel (options)
-      s.(options{i}) = options{i+1};
+function out = parse_inputs (args)
+  out.targets = [];
+  out.fail_fast = false;
+  out.save_workspace = false;
+
+  i = 1;
+  shuffle = false;
+  shuffle_seed = [];
+  shuffle_flag = [];
+  while i <= numel (args)
+    arg = args{i};
+    switch arg
+      case "-auto"
+        out.targets = [out.targets target("auto", args{i+1})];
+        i += 2;
+      case "-file"
+        out.targets = [out.targets target("file", args{i+1})];
+        i += 2;
+      case "-dir"
+        out.targets = [out.targets target("dir", args{i+1})];
+        i += 2;
+      case "-class"
+        out.targets = [out.targets target("class", args{i+1})];
+        i += 2;
+      case "-function"
+        out.targets = [out.targets target("function", args{i+1})];
+        i += 2;
+      case "-pkg"
+        out.targets = [out.targets target("pkg", args{i+1})];
+        i += 2;
+      case "-installed-pkgs"
+        out.targets = [out.targets target("installed_pkgs", [])];
+        i += 1;
+      case "-search-path"
+        out.targets = [out.targets target("search_path", [])];
+        i += 1;
+      case "-octave-builtins"
+        out.targets = [out.targets target("octave_builtins", [])];
+        i += 1;
+      case "-shuffle"
+        shuffle_flag = true;
+        i += 1;
+      case "-shuffle-seed"
+        shuffle_seed = args{i+1};
+        i += 2;
+      case "-fail-fast"
+        out.fail_fast = true;
+        i += 1;
+      case "-save-workspace"
+        out.save_workspace = true;
+        i += 1;
+      case ""
+        error ("runtests2: empty string is not a valid argument");
+      otherwise
+        if ischar (arg)
+          if arg(1) == "-"
+            error ("runtests2: invalid option: %s", arg);
+          endif
+          if arg(1) == "@"
+            out.targets = [out.targets target("class", arg(2:end))];
+          else
+            out.targets = [out.targets target("auto", arg)];
+          endif
+        elseif iscellstr (arg)
+          out.targets = [out.targets target("auto", arg)];
+        endif
+        i += 1;
+    endswitch
+  endwhile
+
+  if ! isempty (shuffle_flag)
+    shuffle = shuffle_flag;
+  endif
+  if ! isempty (shuffle_seed)
+    shuffle = shuffle_seed;
+  endif
+  out.shuffle = shuffle;
+endfunction
+
+function out = target (type, item)
+  if iscellstr (item)
+    out = [];
+    for i = 1:numel (item)
+      out = [out target(type, item{i})];
     endfor
-    options = s;
-  endif
-  if (! isstruct (options))
-    error ("runtests2: options must be a struct or name/val cell vector");
-  endif
-  opt_fields = fieldnames (options);
-  for i = 1:numel (opt_fields)
-    opts.(opt_fields{i}) = options.(opt_fields{i});
-  endfor
-  out = opts;
-endfunction
-
-
-function rslts = run_all_tests (directory, do_class_dirs)
-
-  rslts = testify.internal.BistRunResult;
-  flist = readdir (directory);
-  dirs = {};
-  printf ("Processing files in %s:\n\n", directory);
-  fflush (stdout);
-  for i = 1:numel (flist)
-    f = flist{i};
-    if ((length (f) > 2 && strcmpi (f((end-1):end), ".m"))
-        || (length (f) > 3 && strcmpi (f((end-2):end), ".cc")))
-      ff = fullfile (directory, f);
-      if (has_tests (ff))
-        print_test_file_name (f);
-        [~, rslt] = test2 (ff, "quiet");
-        print_pass_fail (rslt);
-        rslts += rslt;
-        fflush (stdout);
-      elseif (has_functions (ff))
-        rslts.files_with_no_tests{end+1} = f;
-      endif
-    elseif (f(1) == "@")
-      f = fullfile (directory, f);
-      if (isfolder (f))
-        dirs(end+1) = f;
-      endif
-    endif
-  endfor
-  if (! isempty (rslts.files_with_no_tests))
-    printf ("\nThe following files in %s have no tests:\n\n", directory);
-    printf ("%s\n", list_in_columns (rslts.files_with_no_tests, [], "  "));
-  endif
-
-  ## Recurse into class directories since they are implied in the path
-  if (do_class_dirs)
-    for i = 1:numel (dirs)
-      rslts += run_all_tests (dirs{i}, false);
-    endfor
-  endif
-
-endfunction
-
-function retval = has_functions (f)
-
-  n = length (f);
-  if (n > 3 && strcmpi (f((end-2):end), ".cc"))
-    fid = fopen (f);
-    if (fid < 0)
-      error ("runtests2: fopen failed: %s", f);
-    endif
-    str = fread (fid, "*char")';
-    fclose (fid);
-    retval = ! isempty (regexp (str,'^(?:DEFUN|DEFUN_DLD|DEFUNX)\>',
-                                    'lineanchors', 'once'));
-  elseif (n > 2 && strcmpi (f((end-1):end), ".m"))
-    retval = true;
+  elseif ischar (item) || isnumeric (item)
+    out.type = type;
+    out.item = item;
   else
-    retval = false;
+    error ("Invalid item type: %s", class (item));
   endif
-
 endfunction
 
-function retval = has_tests (f)
-  fid = fopen (f);
-  if (fid < 0)
-    error ("runtests2: fopen failed: %s", f);
-  endif
-
-  str = fread (fid, "*char").';
-  fclose (fid);
-  retval = ! isempty (regexp (str,
-                              '^%!(assert|error|fail|test|xtest|warning)',
-                              'lineanchors', 'once'));
+function n = num_elts_matching_pattern (lst, pat)
+  n = sum (! cellfun ("isempty", regexp (lst, pat, 'once')));
 endfunction
 
-function print_pass_fail (r)
-  if (r.n_test > 0)
-    printf (" PASS   %4d/%-4d", r.n_pass, r.n_test);
-    if (r.n_really_fail > 0)
-      printf ("\n%71s %3d", "FAIL ", r.n_really_fail);
-    endif
-    if (r.n_regression > 0)
-      printf ("\n%71s %3d", "REGRESSION", r.n_regression);
-    endif
-    if (r.n_xfail_bug > 0)
-      printf ("\n%71s %3d", "(reported bug) XFAIL", n.xfail_bug);
-    endif
-    if (r.n_xfail > 0)
-      printf ("\n%71s %3d", "(expected failure) XFAIL", r.n_xfail);
-    endif
-    if (r.n_skip_feature > 0)
-      printf ("\n%71s %3d", "(missing feature) SKIP", r.n_skip_feature);
-    endif
-    if (r.n_skip_runtime > 0)
-      printf ("\n%71s %3d", "(run-time condition) SKIP", r.n_skip_runtime);
-    endif
-  endif
-  puts ("\n");
+function out = chomp (str)
+  out = regexprep (str, "\r?\n$", "");
 endfunction
-
-function print_test_file_name (nm)
-  filler = repmat (".", 1, 60-length (nm));
-  printf ("  %s %s", nm, filler);
-endfunction
-
 
 %!error runtests2 ("foo", 1)
 %!error <DIRECTORY argument> runtests2 ("#_TOTALLY_/_INVALID_/_PATHNAME_#")
