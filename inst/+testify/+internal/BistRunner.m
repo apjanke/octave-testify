@@ -25,12 +25,8 @@ classdef BistRunner < handle
     % The source code file the tests are drawn from. This may be an absolute
     % or relative path.
     file
-    % Optional output file to direct output to (e.g. if you're logging)
-    out_file = [];
-    % "normal", "quiet", "verbose"
-    output_mode = "normal"
-    % File handle this is writing output to. Might be stdout.
-    fid = [];
+    % File handle(s) to write detailed log output to
+    log_fids = [];
     % Whether to run demo blocks when running tests
     run_demo = false;
     % If true, will abort the test run immediately upon any failure
@@ -48,10 +44,6 @@ classdef BistRunner < handle
     % Temp dir for BistRunner's data for a particular run (for this whole file)
     run_tmp_dir;
   endproperties  
-
-  properties (Dependent)
-    verbose
-  endproperties
 
   methods (Static)
     function file = locate_test_file (name, verbose, fid)
@@ -145,47 +137,10 @@ classdef BistRunner < handle
       this.file = file;
     endfunction
 
-    function set.output_mode (this, mode)
-      if ! ismember (mode, {"normal", "quiet", "verbose"})
-        error ("BistRunner: invalid output_mode: %s", mode);
-      endif
-      this.output_mode = mode;
-    endfunction
-
-    function out = get.verbose (this)
-      switch this.output_mode
-        case "quiet"
-          out = -1;
-        case "normal"
-          % TODO: "batch" mode should set this to -1 here
-          if ! isempty (this.out_file)
-            out = 1;
-          else
-            out = 0;
-          endif
-        case "verbose"
-          out = 1;
-      endswitch
-    endfunction
-
-    function start_output (this)
-      if isempty (this.out_file)
-        this.fid = stdout;
-      else
-        this.fid = fopen2 (this.out_file, "w");
-      endif
-    endfunction
-
     function emit (this, fmt, varargin)
-      %EMIT Emit output to this' current output
-      fprintf (this.fid, fmt, varargin{:});
-    endfunction
-
-    function end_output (this)
-      if ! isempty (this.out_file)
-        fclose (this.fid);
-        this.fid = [];
-      endif
+      for fid = this.log_fids
+        fprintf (fid, fmt, varargin{:});
+      endfor
     endfunction
 
     function out = extract_demo_code (this)
@@ -204,12 +159,6 @@ classdef BistRunner < handle
       out.ixs = demo_blocks_ix;
     endfunction
 
-    function fprintf_verbose (this, varargin)
-      if this.verbose > 0
-        fprintf (varargin{:});
-      endif
-    endfunction
-
     function out = maybe_shuffle_blocks (this, blocks)
       if this.shuffle
         if isnumeric (this.shuffle)
@@ -217,7 +166,7 @@ classdef BistRunner < handle
         else
           shuffle_seed = now;
         endif
-        this.fprintf_verbose ("Shuffling test blocks with rand seed %.15f\n", shuffle_seed);
+        this.emit ("Shuffling test blocks with rand seed %.15f\n", shuffle_seed);
         out = testify.internal.Util.shuffle (blocks, shuffle_seed);
       else
         out = blocks;
@@ -258,7 +207,7 @@ classdef BistRunner < handle
       endif
     endfunction
 
-    function [out, info] = run_tests (this)
+    function out = run_tests (this)
       %RUN_TESTS Run the tests found in this file
       persistent signal_fail  = "!!!!! ";
       persistent signal_empty = "????? ";
@@ -267,8 +216,6 @@ classdef BistRunner < handle
       persistent signal_skip  = "----- ";
 
       this.pick_run_tmp_dir;
-      this.start_output;
-      RAII.out_file = onCleanup (@() this.end_output);
       out = testify.internal.BistRunResult;
       out.files_processed{end+1} = this.file;
 
@@ -277,7 +224,7 @@ classdef BistRunner < handle
       	this.emit ("%s????? %s has no tests\n", this.file);
       	return
       endif
-      this.fprintf_verbose (">>>>> %s\n", this.file);
+      this.emit (">>>>> %s\n", this.file);
       blocks = this.parse_test_code (test_code);
 
       blocks = this.maybe_shuffle_blocks (blocks);
@@ -299,15 +246,10 @@ classdef BistRunner < handle
         for i_block = 1:numel (blocks)
           block = blocks(i_block);
           success = true;
-          msg = "--original message--";
+          msg = "";
 
-          this.fprintf_verbose ("%s %s (block #%d)\n%s\n", ...
+          this.emit ("%s %s (block #%d)\n%s\n", ...
             signal_block, block.type, block.index, block.code);
-
-          #fprintf ("DEBUG: Processing block:\n");
-          #fprintf ("==== begin block display ====\n");
-          #disp (block);
-          #fprintf ("==== end block display ====\n");
 
           if this.save_workspace_on_failure
             this.clear_stashed_workspace;
@@ -411,7 +353,7 @@ classdef BistRunner < handle
 
           te = toc (t0);
           rslt.elapsed_wall_time = te;
-          this.fprintf_verbose ("  -> success=%d, msg=%s\n", success, msg);
+          this.emit ("  -> success=%d, msg=%s\n", success, msg);
 
           if block.is_test
             rslt.n_test += 1;
@@ -422,7 +364,8 @@ classdef BistRunner < handle
           else
             rslt = rslt.add_failed_file (this.file);
             if this.save_workspace_on_failure
-              this.stash_test_workspace ("after", workspace.workspace);
+              this.stash_test_workspace ("after", workspace.workspace);              
+              this.emit ("\nSaved test workspace is available in: %s\n", this.stashed_workspace_file);
               fprintf ("\nSaved test workspace is available in: %s\n", this.stashed_workspace_file);
             endif
             if this.fail_fast
@@ -441,21 +384,20 @@ classdef BistRunner < handle
 
       ## Verify test file did not leak resources
       if (! isempty (setdiff (fopen ("all"), fid_list_orig)))
-        warning ("test2: file %s leaked file descriptors\n", file);
+        this.emit ("test2: test file %s leaked file descriptors\n", file);
       endif
       leaked_base_vars = setdiff (evalin ("base", "who"), base_variables_orig);
       if (! isempty (leaked_base_vars))
-        warning ("test2: file %s leaked variables to base workspace:%s\n",
+        this.emit ("test2: test file %s leaked variables to base workspace:%s\n",
                  this.file, sprintf (" %s", leaked_base_vars{:}));
       endif
       leaked_global_vars = setdiff (who ("global"), global_variables_orig);
       if (! isempty (leaked_global_vars))
-        warning ("test2: file %s leaked global variables:%s\n",
+        this.emit ("test2: test file %s leaked global variables:%s\n",
                  this.file, sprintf (" %s", leaked_global_vars{:}));
       endif
 
       out = rslt;
-      info = struct;
 
     endfunction
 
@@ -776,39 +718,41 @@ classdef BistRunner < handle
       endif
     endfunction
 
-    function out = print_test_results (this, rslt, file)
+    function out = print_test_results (this, rslt, file, fid)
+      if nargin < 4 || isempty (fid); fid = stdout; endif
+
       persistent signal_empty = "????? ";
       r = rslt;
       if (r.n_test || r.n_xfail || r.n_xfail_bug || r.n_skip)
         if (r.n_xfail || r.n_xfail_bug)
           if (r.n_xfail && r.n_xfail_bug)
-            printf ("PASSES %d out of %d test%s (%d known failure%s; %d known bug%s)\n",
+            fprintf (fid, "PASSES %d out of %d test%s (%d known failure%s; %d known bug%s)\n",
                     r.n_pass, r.n_test, ifelse (r.n_test > 1, "s", ""),
                     r.n_xfail, ifelse (r.n_xfail > 1, "s", ""),
                     r.n_xfail_bug, ifelse (r.n_xfail_bug > 1, "s", ""));
           elseif (r.n_xfail)
-            printf ("PASSES %d out of %d test%s (%d known failure%s)\n",
+            fprintf (fid, "PASSES %d out of %d test%s (%d known failure%s)\n",
                     r.n_pass, r.n_test, ifelse (r.n_test > 1, "s", ""),
                     r.n_xfail, ifelse (r.n_xfail > 1, "s", ""));
           elseif (__xbug)
-            printf ("PASSES %d out of %d test%s (%d known bug%s)\n",
+            fprintf (fid, "PASSES %d out of %d test%s (%d known bug%s)\n",
                     r.n_pass, r.n_test, ifelse (r.n_test > 1, "s", ""),
                     r.n_xfail_bug, ifelse (r.n_xfail_bug > 1, "s", ""));
           endif
         else
-          printf ("PASSES %d out of %d test%s\n", r.n_pass, r.n_test,
+          fprintf (fid, "PASSES %d out of %d test%s\n", r.n_pass, r.n_test,
                  ifelse (r.n_test > 1, "s", ""));
         endif
         if (r.n_skip_feature)
-          printf ("Skipped %d test%s due to missing features\n", r.n_skip_feature,
+          fprintf (fid, "Skipped %d test%s due to missing features\n", r.n_skip_feature,
                   ifelse (r.n_skip_feature > 1, "s", ""));
         endif
         if (r.n_skip_runtime)
-          printf ("Skipped %d test%s due to run-time conditions\n", r.n_skip_runtime,
+          fprintf (fid, "Skipped %d test%s due to run-time conditions\n", r.n_skip_runtime,
                   ifelse (r.n_skip_runtime > 1, "s", ""));
         endif
       else
-        printf ("%s%s has no tests available\n", signal_empty, file);
+        fprintf (fid, "%s%s has no tests available\n", signal_empty, file);
       endif      
     endfunction
 

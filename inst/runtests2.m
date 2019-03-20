@@ -46,6 +46,7 @@
 ##   -shuffle-seed <seed> - Shuffle file sets and file orders with given seed
 ##   -fail-fast           - Abort the test run upon the first test failure
 ##   -save-workspace      - Save test workspaces for failed tests
+##   -log-file <file>     - File to write detailed test log info to
 ##
 ## If no target is specified, operates on all directories in Octave's search
 ## path. (The same as -search-path.)
@@ -104,6 +105,12 @@ function [p, __rslts__] = runtests2 (varargin)
 
   # Run tests and show results
 
+  if ! isempty (opts.log_file)
+    [log_fid] = fopen2 (opts.log_file, "w");
+    runner.log_fid = log_fid;
+    RAII.log_fid = onCleanup (@() fclose (log_fid));
+  endif
+
   rslts = runner.run_tests;
   
   reporter = testify.internal.BistResultsReporter;
@@ -124,6 +131,7 @@ function out = parse_inputs (args)
   out.targets = [];
   out.fail_fast = false;
   out.save_workspace = false;
+  out.log_file = [];
 
   i = 1;
   shuffle = false;
@@ -171,6 +179,9 @@ function out = parse_inputs (args)
       case "-save-workspace"
         out.save_workspace = true;
         i += 1;
+      case "-log-file"
+        out.log_file = args{i+1};
+        i += 2;
       case ""
         error ("runtests2: empty string is not a valid argument");
       otherwise

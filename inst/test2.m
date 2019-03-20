@@ -22,7 +22,6 @@
 ## @deftypefnx {} {} test2 @var{name} quiet|normal|verbose
 ## @deftypefnx {} {} test2 ("@var{name}", @dots{})
 ## @deftypefnx {} {@var{success}, @var{__rslt__} =} test2 (@dots{})
-## @deftypefnx {} {[@var{n}, @var{nmax}, @var{nxfail}, @var{nbug}, @var{nskip}, @var{nrtskip}, @var{nregression}] =} test2 (@dots{})
 ## @deftypefnx {} {[@var{code}, @var{idx}] =} test2 ("@var{name}", "grabdemo")
 ## @deftypefnx {} {} test2 ([], "explain", @var{fid})
 ## @deftypefnx {} {} test2 ([], "explain", @var{fname})
@@ -87,7 +86,6 @@
 ##   -fail-fast        - Abort the test run immediately after any failure (default)
 ##   -no-fail-fast     - Do not abort the test run upon failures
 ##   -log-file <file>  - A file name to write result log output to
-##   -log-fid <fid>    - An fid to write result log output to
 ##   -shuffle          - Shuffle the test block execution order
 ##   -save-workspace   - Save workspace data for failed test
 ##   quiet             - Alias for -quiet
@@ -142,8 +140,8 @@ function varargout = test2 (name, varargin)
   endif
 
   opts = parse_args (name, varargin);
-  if ! isempty (opts.log_fname)
-    fid = fopen2 (log_fname, "wt");
+  if ! isempty (opts.log_file)
+    fid = fopen2 (opts.log_file, "wt");
     RAII.logfile = onCleanup (@() fclose(fid));
   else
     fid = opts.fid;
@@ -174,10 +172,14 @@ function varargout = test2 (name, varargin)
   endif
 
   runner = testify.internal.BistRunner (file);
-  runner.output_mode = opts.output_mode;
   runner.fail_fast = opts.fail_fast;
   runner.shuffle = opts.shuffle;
   runner.save_workspace_on_failure = opts.save_workspace;
+  # We want verbose output to the console
+  if isequal (opts.output_mode, "verbose")
+    runner.log_fids = stdout;
+  endif
+
 
   ## Special-case per-file behaviors
 
@@ -187,25 +189,28 @@ function varargout = test2 (name, varargin)
     return
   endif
   
-  runner.out_file = opts.log_fname;
   runner.run_demo = opts.rundemo;
 
   if ! isequal (opts.mode, "test")
     error ("Unimplemented test mode: %s", opts.mode);
   endif
 
-  [rslt, info] = runner.run_tests;
+  if ! isempty (opts.log_file)
+    [log_fid] = fopen2 (opts.log_file, "w");
+    runner.log_fids(end+1) = log_fid;
+    RAII.log_fid = onCleanup (@() fclose (log_fid));
+  endif
+
+  rslt = runner.run_tests;
+
+  if ! isempty (opts.log_file)
+    runner.print_test_results (rslt, file, log_fid);
+  endif
 
   if nargout == 0
     runner.print_test_results (rslt);
-  elseif nargout > 0
-    if nargout > 2
-      # Legacy return signature
-      varargout = {rslt.n_fail, rslt.n_test, rslt.n_xfail, rslt.n_xfail_bug, ...
-         rslt.n_skip_feature, rslt.n_skip_runtime, rslt.n_regression};
-    else
-      varargout = {rslt.n_fail, rslt, info};
-    endif
+  else
+    varargout = {rslt.n_fail, rslt};
   endif
 
 endfunction
@@ -219,8 +224,7 @@ function out = parse_args (name, args)
   mode = "test";
   output_mode = "normal";
   fail_fast = true;
-  fid = [];
-  log_fname = [];
+  log_file = [];
   shuffle = false;
   shuffle_seed = [];
   shuffle_flag = [];
@@ -252,11 +256,8 @@ function out = parse_args (name, args)
         case "-no-fail-fast"
           fail_fast = false;
           i += 1;
-        case "-log-fid"
-          fid = args{i+1};
-          i += 2;
         case "-log-file"
-          fid = args{i+1};
+          log_file = args{i+1};
           i += 2;
         case "-shuffle"
           shuffle_flag = true;
@@ -277,11 +278,9 @@ function out = parse_args (name, args)
 
   ## Decide if error messages should be collected.
   out = struct;
-  do_logfile = ! isempty (fid) || ! isempty (log_fname);
-  batch = do_logfile || nargout > 0;
+  do_logfile = ! isempty (log_file);
   cleanup = struct;
-  out.fid = fid;
-  out.log_fname = log_fname;
+  out.log_file = log_file;
 
   grabdemo = false;
   rundemo = false;
@@ -301,15 +300,12 @@ function out = parse_args (name, args)
     case "normal"
       if (do_logfile)
         verbose = 1;
-      elseif (batch)
-        verbose = -1;
       else
         verbose = 0;
       endif
     case "quiet"
       verbose  = -1;
     case "verbose"
-      rundemo  = ! batch;
       verbose  = 1;
     otherwise
       error ("test2: unknown output mode: '%s'", output_mode);
@@ -325,7 +321,7 @@ function out = parse_args (name, args)
   out.name = name;
   out.mode = mode;
   out.do_logfile = do_logfile;
-  out.log_fname = log_fname;
+  out.log_file = log_file;
   out.grabdemo = grabdemo;
   out.rundemo = rundemo;
   out.output_mode = output_mode;

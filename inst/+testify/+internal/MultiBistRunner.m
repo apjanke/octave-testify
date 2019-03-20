@@ -325,12 +325,9 @@ classdef MultiBistRunner < handle
           if this.file_has_tests (file)
             print_test_file_name (file);
 		        runner = testify.internal.BistRunner (file);
-            if ! isempty (this.log_fid)
-              runner.fid = this.log_fid;
-            endif
+            runner.log_fids = this.log_fid;
             runner.fail_fast = this.fail_fast;
             runner.save_workspace_on_failure = this.save_workspace_on_failure;
-         	 	runner.output_mode = "quiet";
           	rslt = runner.run_tests;
             print_pass_fail (rslt);
           	rslts = rslts + rslt;
@@ -417,7 +414,8 @@ function out = endswith_any (str, endings)
   out = false;
 endfunction
 
-function print_pass_fail (r)
+function print_pass_fail (rslts)
+  r = rslts;
   if (r.n_test > 0)
     printf (" PASS   %4d/%-4d", r.n_pass, r.n_test);
     if (r.n_really_fail > 0)
