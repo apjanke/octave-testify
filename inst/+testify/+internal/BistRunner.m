@@ -599,10 +599,12 @@ classdef BistRunner < handle
 
         case {"assert", "fail"}
           [bug_id, rest, fixed] = this.find_bugid_in_assert (contents);
+          %TODO: What to do with "fixed" here?
           out.is_test = true;
           out.is_xtest = ! isempty (bug_id);
           out.bug_id = bug_id;
           out.code = [out.type contents];
+
 
         case {"error", "warning"}
           out.is_test = true;
