@@ -39,7 +39,9 @@ classdef MultiBistRunner < handle
     test_file_extensions = {'.m', '.cc', '.cc-tst'}
     % Control for shuffling test file order. true/false/double
     shuffle = false;
+    % Whether to abort on test failure
     fail_fast = false;
+    % Whether to save out copies of the workspace upon test failure
     save_workspace_on_failure = false;
   endproperties
 

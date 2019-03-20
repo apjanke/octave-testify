@@ -71,6 +71,7 @@ function varargout = __run_test_suite2__ (fcndirs, fixedtestdirs, topsrcdir = []
     unwind_protect
       test2_refactor ("", "explain", "-log-fid", fid);
 
+      ## TODO: This fid arg doesn't work. Fix it.
       runner = testify.internal.MultiBistRunner (fid);
       runner.add_octave_builtins;
       runner.add_octave_standard_library;
