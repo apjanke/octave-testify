@@ -46,24 +46,103 @@ classdef BistBlock
   	% The name of the function defined by a "function" block
   	function_name = [];
   	% Bug ID for xtest-like blocks
-  	bug_id
-  	fixed_bug
-  	is_warning
+  	bug_id = ""
+  	fixed_bug = ""
+  	is_warning = false
     % Regexp pattern for matching message in "error" and "warning" tests
-  	pattern
-  	pat_str
+  	pattern = ""
+  	pat_str = ""
     % Expected error identifier for "error" tests
-  	error_id
+  	error_id = ""
   	% Runtime feature test for "testif" blocks
-  	runtime_feature_test
+  	runtime_feature_test = ""
   	% Feature for "testif" blocks
-  	feature
+  	feature = ""
     % The whole text of the feature line for "testif" blocks (for debugging)
-    feature_line
+    feature_line = ""
   endproperties
 
   methods
-  	function disp (this)
+
+    function this = set.feature (this, feature)
+      if ! ischar (feature) && ! iscellstr (feature)
+        error ("feature must be char or cellstr; got a %s", class (feature));
+      endif
+      this.feature = feature;
+    endfunction
+
+    function out = dispstr (this)
+      lines = {};
+      lines{end+1} = sprintf ("%s: %s (index=%d)", class (this), this.type, this.index);
+      if ! this.is_valid
+        lines{end+1} = sprintf ("INVALID BLOCK!");
+        lines{end+1} = "Contents:";
+        lines{end+1} = this.contents;
+        out = strjoin (lines, "\n");
+        return;
+      endif
+
+      switch this.type
+        case "demo"
+          lines{end+1} = this.contents;
+        case "shared"
+          lines{end+1} = sprintf ("  vars: %s", strjoin (this.vars, " "));
+          if ! isempty (this.code)
+            lines{end+1} = "Code:";
+            lines{end+1} = this.code;
+          endif
+        case "function"
+          lines{end+1} = "Code:";
+          lines{end+1} = this.code;
+        case "endfunction"
+          % NOP
+        case {"assert", "fail"}
+          lines{end+1} = sprintf ("  is_test=%d  is_xtest=%d", this.is_test, this.is_xtest);
+          lines{end+1} = sprintf ("  bug_id=%s  fixed_bug=%s", this.bug_id, this.fixed_bug);
+          lines{end+1} = "Code:";
+          lines{end+1} = this.code;
+        case {"error", "warning"}
+          lines{end+1} = sprintf ("  is_test=%d  is_xtest=%d", this.is_test, this.is_xtest);
+          lines{end+1} = sprintf ("  error_id='%s'", this.error_id);
+          lines{end+1} = sprintf ("  pattern=/%s/", this.pattern);
+          lines{end+1} = "Code:";
+          lines{end+1} = this.code;
+        case "testif"
+          lines{end+1} = sprintf ("  is_test=%d  is_xtest=%d", this.is_test, this.is_xtest);
+          lines{end+1} = sprintf ("  feature_line='%s'", this.feature_line);
+          if iscellstr (this.feature)
+            feat_str = ["{" strjoin(this.feature, ", ") "}"];
+          else
+            feat_str = this.feature;
+          endif
+          lines{end+1} = sprintf ("  feature='%s'", feat_str);
+          lines{end+1} = sprintf ("  runtime_feature_test='%s'", this.runtime_feature_test);
+          lines{end+1} = "Code:";
+          lines{end+1} = this.code;
+        case {"test", "xtest"}
+          lines{end+1} = sprintf ("  is_test=%d  is_xtest=%d", this.is_test, this.is_xtest);
+          lines{end+1} = sprintf ("  bug_id=%s  fixed_bug=%s", this.bug_id, this.fixed_bug);
+          lines{end+1} = "Code:";
+          lines{end+1} = this.code;
+        case {"comment"}
+          lines{end+1} = "Contents:";
+          lines{end+1} = this.contents;
+        otherwise
+          lines{end+1} = sprintf ("  is_test=%d  is_xtest=%d", this.is_test, this.is_xtest);
+          lines{end+1} = "*** <unrecognized block type> ***";
+          lines{end+1} = "Contents:";
+          lines{end+1} = this.contents;
+      endswitch
+
+      out = strjoin (lines, "\n");
+    endfunction
+
+    function disp (this)
+      str = this.dispstr;
+      disp(this.dispstr);
+    endfunction
+
+  	function inspect (this)
   	  origWarn = warning;
   	  warning off Octave:classdef-to-struct
   	  data = builtin ("struct", this);

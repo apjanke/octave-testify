@@ -264,8 +264,7 @@ classdef BistRunner < handle
           success = true;
           msg = "";
 
-          this.emit ("%s %s (block #%d)\n%s\n", ...
-            signal_block, block.type, block.index, block.code);
+          this.emit ("%s %s \n", signal_block, block.dispstr);
 
           if this.save_workspace_on_failure
             this.clear_stashed_workspace;
