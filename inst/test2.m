@@ -79,17 +79,24 @@
 ##
 ## Arguments 2 and later are parsed as options. Valid options:
 ##
-##   quiet
-##   normal
-##   verbose
+##   -quiet            - Run in quiet output mode, with minimal output
+##   -normal           - Run in normal output mode
+##   -verbose          - Run in verbose output mode, displaying individual test items
+##   -grabdemo         - Extract the demo code from file instead of running tests
+##   -explain          - Display an explanation of output format and exit
 ##   -fail-fast        - Abort the test run immediately after any failure (default)
 ##   -no-fail-fast     - Do not abort the test run upon failures
 ##   -log-file <file>  - A file name to write result log output to
 ##   -log-fid <fid>    - An fid to write result log output to
 ##   -shuffle          - Shuffle the test block execution order
 ##   -save-workspace   - Save workspace data for failed test
+##   quiet             - Alias for -quiet
+##   normal            - Alias for -normal
+##   verbose           - Alias for -verbose
+##   grabdemo          - Alias for -grabdemo
+##   explain           - Alias for -explain
 ##
-## When called with output arguments (and not in @qcode{"grabdemo"} or @qcode{"explain"}
+## When called with output arguments (and not in @qcode{"-grabdemo"} or @qcode{"-explain"}
 ## mode), returns the following outputs:
 ##   @code{success} - True if all tests passed, false otherwise
 ##   @code{__rslt__} - An object holding results data. The format of this object
@@ -227,7 +234,16 @@ function out = parse_args (name, args)
         case {"grabdemo", "explain"}
           mode = arg;
           i += 1;
-        case {"normal", "verbose", "quiet"}
+        case "-grabdemo"
+          mode = "grabdemo";
+          i += 1;
+        case "-explain"
+          mode = "explain";
+          i += 1;
+        case {"normal", "verbose", "quiet", "-normal", "-verbose", "-quiet"}
+          if arg(1) == "-"
+            arg(1) = [];
+          endif
           output_mode = arg;
           i += 1;
         case "-fail-fast"
