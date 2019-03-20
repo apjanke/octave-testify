@@ -101,6 +101,12 @@ classdef BistRunResult
     function out = get.files_with_no_tests (this)
       out = setdiff (this.files_processed, this.files_with_tests);
     endfunction
+
+    function this = add_failed_file (this, file)
+      if ! ismember (file, this.failed_files)
+        this.failed_files{end+1} = file;
+      endif
+    endfunction
     
     function out = plus(A, B)
       %PLUS Combine results

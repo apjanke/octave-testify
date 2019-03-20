@@ -420,6 +420,7 @@ classdef BistRunner < handle
           if success
             this.clear_stashed_workspace;
           else
+            rslt = rslt.add_failed_file (this.file);
             if this.save_workspace_on_failure
               this.stash_test_workspace ("after", workspace.workspace);
               fprintf ("\nSaved test workspace is available in: %s\n", this.stashed_workspace_file);

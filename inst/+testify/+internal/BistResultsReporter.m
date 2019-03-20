@@ -42,7 +42,7 @@ classdef BistResultsReporter
 		  host = testify.internal.Util.safe_hostname;
 		  os_name = testify.internal.Util.os_name;
 		  this.p ("  Tests run on %s (%s) at %s\n", host, os_name, datestr (now));
-		  this.p ("  Execution time: %.0f s\n", rslts.elapsed_wall_time);
+		  this.p ("  Test execution time: %.0f s\n", rslts.elapsed_wall_time);
 		  this.p ("\n");
 		  this.p ("  %-30s %6d\n", "PASS", rslts.n_pass);
 		  this.p ("  %-30s %6d\n", "FAIL", rslts.n_really_fail);
