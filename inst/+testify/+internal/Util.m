@@ -20,44 +20,44 @@ classdef Util
 
   methods (Static)
 
-	function out = parse_options (options, defaults)
-	  opts = defaults;
-	  if iscell (options)
-	    s = struct;
-	    for i = 1:2:numel (options)
-	      s.(options{i}) = options{i+1};
-	    endfor
-	    options = s;
-	  endif
-	  if (! isstruct (options))
-	    error ("options must be a struct or name/val cell vector");
-	  endif
-	  opt_fields = fieldnames (options);
-	  for i = 1:numel (opt_fields)
-	    opts.(opt_fields{i}) = options.(opt_fields{i});
-	  endfor
-	  out = opts;
-	endfunction
+		function out = parse_options (options, defaults)
+		  opts = defaults;
+		  if iscell (options)
+		    s = struct;
+		    for i = 1:2:numel (options)
+		      s.(options{i}) = options{i+1};
+		    endfor
+		    options = s;
+		  endif
+		  if (! isstruct (options))
+		    error ("options must be a struct or name/val cell vector");
+		  endif
+		  opt_fields = fieldnames (options);
+		  for i = 1:numel (opt_fields)
+		    opts.(opt_fields{i}) = options.(opt_fields{i});
+		  endfor
+		  out = opts;
+		endfunction
 
-	function out = safe_hostname ()
-	  [status, host] = system ("hostname 2>/dev/null");
-	  if status == 0
-	    out = chomp (host);
-	  else
-	    % Yes, this might happen. E.g. hostname fails under Flatpak
-	    out = "unknown-host";
-	  endif
-	endfunction
+		function out = safe_hostname ()
+		  [status, host] = system ("hostname 2>/dev/null");
+		  if status == 0
+		    out = chomp (host);
+		  else
+		    % Yes, this might happen. E.g. hostname fails under Flatpak
+		    out = "unknown-host";
+		  endif
+		endfunction
 
-	function out = os_name ()
-	  if ispc
-	    out = "Windows";
-	  elseif ismac
-	    out = "macOS";
-	  else
-	    out = "Unix";
-	  endif
-	endfunction
+		function out = os_name ()
+		  if ispc
+		    out = "Windows";
+		  elseif ismac
+		    out = "macOS";
+		  else
+		    out = "Unix";
+		  endif
+		endfunction
 
     function out = shuffle (x, seed)
       orig_seed = rand ("seed");
