@@ -302,7 +302,6 @@ classdef ForgePkgTester < handle
       unwind_protect
         this = install_and_test_forge_pkg_unsafe (this, pkg_name);
       unwind_protect_cleanup
-        this.tested_pkgs{end+1} = pkg_name;
         file_droppings = this.find_file_droppings;
         if ! isempty (file_droppings)
           fprintf ("\n");
@@ -367,6 +366,7 @@ classdef ForgePkgTester < handle
       % Test
       say ("Testing Forge package %s", pkg_name);
       nfailed = __test_pkgs__ (pkg_name, {"doctest", this.do_doctest});
+      this.tested_pkgs{end+1} = pkg_name;
       if nfailed > 0
         this.test_failures{end+1} = pkg_name;
       else
