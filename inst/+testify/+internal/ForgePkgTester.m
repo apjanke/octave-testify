@@ -316,7 +316,7 @@ classdef ForgePkgTester < handle
       endif
       % Test
       say ("Testing Forge package %s", pkg_name);
-      nfailed = __test_pkgs__ (pkg_name, {"doctest", this.do_doctest});
+      nfailed = testify.test_pkgs (pkg_name, {"doctest", this.do_doctest});
       if nfailed > 0
         this.test_failures{end+1} = pkg_name;
       else
