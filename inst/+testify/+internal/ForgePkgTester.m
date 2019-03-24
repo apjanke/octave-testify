@@ -89,19 +89,19 @@ classdef ForgePkgTester < handle
   properties
     ## Working/transient properties
     % Order to install packages and dependencies in
-    install_order
-    deps_installed_ok = {};
-    dep_install_failures = {};
-    skipped_pkgs_install = {};
-    skipped_pkgs_test = {};
-    tested_pkgs = {};
-    install_failures = {};
-    install_dependency_failures = {};
-    test_passes = {};
-    test_failures = {};
-    test_elapsed_time = NaN;
-    error_pkgs = {};
-    file_droppings = {};
+    install_order = {}
+    deps_installed_ok = {}
+    dep_install_failures = {}
+    skipped_pkgs_install = {}
+    skipped_pkgs_test = {}
+    tested_pkgs = {}
+    install_failures = {}
+    install_dependency_failures = {}
+    test_passes = {}
+    test_failures = {}
+    test_elapsed_time = NaN
+    error_pkgs = {}
+    file_droppings = {}
   endproperties
   
   properties (Dependent)
@@ -135,7 +135,56 @@ classdef ForgePkgTester < handle
       this.build_log_dir = fullfile (this.output_dir, "build-logs");
       this.tmp_run_dir = fullfile (tempdir, [output_dir_base_name "-run"]);
     endfunction
-    
+
+    function disp (this)
+      disp (dispstr (this));
+    endfunction
+
+    function out = dispstr (this)
+      if isscalar (this)
+        strs = dispstrs (this);
+        out = strs{1};
+      else
+        out = sprintf ("%s %s", size2str (size (this)), class (this));
+      endif
+    endfunction
+
+    function out = dispstrs (this)
+      out = cell (size (this));
+      for i = 1:numel (this)
+        lines = {
+          [class(this) ":"]
+          sprintf("  output_dir: %s", this.output_dir)
+          sprintf("  build_log_dir: %s", this.build_log_dir)
+          sprintf("  tmp_run_dir: %s", this.tmp_run_dir);
+          sprintf("  pkgs_to_test: %s", strjoin(this.pkgs_to_test, ", "))
+          sprintf("  install_order: %s", strjoin(this.install_order, ", "))
+          sprintf("  deps_installed_ok: %s", strjoin(this.deps_installed_ok, ", "))
+          sprintf("  dep_install_failures: %s", strjoin(this.dep_install_failures, ", "))
+          sprintf("  skipped_pkgs_install: %s", strjoin(this.skipped_pkgs_install, ", "))
+          sprintf("  skipped_pkgs_test: %s", strjoin(this.skipped_pkgs_test, ", "))
+          sprintf("  tested_pkgs: %s", strjoin(this.tested_pkgs, ", "))
+          sprintf("  all_installed_pkgs: %s", strjoin(this.all_installed_pkgs, ", "))
+          sprintf("  install_failures: %s", strjoin(this.install_failures, ", "))
+          sprintf("  install_dependency_failures: %s", strjoin(this.install_dependency_failures))
+          sprintf("  test_passes: %s", strjoin(this.test_passes, ", "))
+          sprintf("  test_failures: %s", strjoin(this.test_failures, ", "))
+          sprintf("  error_pkgs: %s", strjoin(this.error_pkgs, ", "))
+          sprintf("  test_elapsed_time: %s", seconds_to_mmss(this.test_elapsed_time))
+        };
+        out{i} = strjoin (lines, "\n");
+      endfor
+    endfunction
+
+    function out = char (this)
+      if ! isscalar (this)
+        error ("%s: char() only works on scalar %s objects; this is %s", ...
+          class (this), class (this), size2str (size (this)));
+      endif
+      strs = dispstrs (this);
+      out = strs{1};
+    endfunction
+
     function out = acquire_lock (this)
       lock_dir = fullfile (testify.internal.Util.testify_data_dir, ...
         "forge-tester", "locks");
