@@ -56,6 +56,7 @@ classdef ForgePkgTester < handle
     my_impl_pkgs  = {
       "testify"
       "doctest"
+      "packajoozle"
     }';
   endproperties
 
@@ -204,7 +205,7 @@ classdef ForgePkgTester < handle
             % It's just a dependency
             this.install_dependency (pkg);
           endif
-          flush_diary
+          testify.internal.Util.flush_diary
         endfor
         this.pkgtool.uninstall_all_pkgs_except (this.my_impl_pkgs);
       unwind_protect_cleanup
@@ -327,17 +328,15 @@ classdef ForgePkgTester < handle
 
     function capture_build_logs (this, pkg_name, build_rslt)
       pkg_build_log_dir = fullfile (this.build_log_dir, pkg_name);
-      for i = 1:numel (build_rslt.log_dirs)
-        contents = my_readdir (build_rslt.log_dirs{i});
-        if isempty (contents)
-          say ("No build logs for %s", pkg_name)
-          continue
-        endif
-        if ! exist (pkg_build_log_dir, "dir")
-          mkdir (pkg_build_log_dir);
-        endif
-        copyfile ([build_rslt.log_dirs{i} "/*"], pkg_build_log_dir);
-      endfor    
+      contents = testify.internal.Util.readdir (build_rslt.log_dir);
+      if isempty (contents)
+        say ("No build logs for %s", pkg_name)
+        continue
+      endif
+      if ! exist (pkg_build_log_dir, "dir")
+        mkdir (pkg_build_log_dir);
+      endif
+      copyfile ([build_rslt.log_dir "/*"], pkg_build_log_dir);
     endfunction
     
     function display_results (this)
@@ -413,21 +412,9 @@ classdef ForgePkgTester < handle
 
 endclassdef
 
-function out = my_readdir (dir)
-  out = readdir (dir);
-  out(ismember (out, {"." ".."})) = [];
-endfunction
-
 function say (varargin)
   fprintf ("%s: %s\n", "testify.ForgePkgTester", sprintf (varargin{:}));
   flush_diary
-endfunction
-
-function flush_diary
-  if diary
-    diary off
-    diary on
-  endif
 endfunction
 
 function out = chomp (str)
@@ -443,3 +430,8 @@ function out = seconds_to_mmss (sec)
   seconds = round (sec - (minutes * 60));
   out = sprintf ("%02d:%02d", minutes, seconds);
 endfunction
+
+function flush_diary
+  testify.internal.Util.flush_diary;
+endfunction
+

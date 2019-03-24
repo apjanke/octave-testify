@@ -92,6 +92,43 @@ classdef Util
         diary on
       endif
     endfunction
+
+    function out = basename (this, file)
+      ix = find (file == filesep, 1, "last");
+      if isempty (ix)
+        out = file;
+      else
+        out = file(ix+1:end);
+      endif
+    endfunction
+
+    function rm_rf (path)
+      if exist (path, "dir")
+        confirm_recursive_rmdir (0, "local");
+        [ok, msg, msgid] = rmdir (path, "s");
+        if ! ok
+          error ("rm_rf: Failed deleting dir %s: %s", path, msg);
+        endif
+      elseif exist (path, "file")
+        lastwarn("");
+        delete (path);
+        [w, w_id] = lastwarn;
+        if ! isempty (w)
+          error ("rm_rf: Failed deleting file %s: %s", path, w);
+        endif
+      else
+        % NOP
+      endif
+    endfunction
+
+    function out = readdir (path)
+      [out, err, msg] = readdir (path);
+      if err
+        error ("readdir: Could not read directory '%s': %s", path, msg);
+      endif
+      out(ismember (out, {'.', '..'})) = [];
+    endfunction
+
   endmethods
 
 endclassdef

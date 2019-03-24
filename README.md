@@ -34,6 +34,7 @@ To get started using or testing this project, install it and its dependencies us
 
 ```
 pkg install -forge doctest
+pkg install https://github.com/apjanke/octave-packajoozle/archive/master.tar.gz
 pkg install https://github.com/apjanke/octave-testify/releases/download/v0.3.0/testify-0.3.0.tar.gz
 pkg load testify
 ```
