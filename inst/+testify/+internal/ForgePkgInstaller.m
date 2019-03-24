@@ -26,7 +26,7 @@ classdef ForgePkgInstaller
       % Returns a result code instead of throwing errors in the case of some
       % package installation failures. You need to check the return status.
       args = cellstr (varargin);
-      install_args = [{'install' '-forge'} args];
+      install_args = [{'install' '-forge' '-nodeps'} args];
       say ("%s", strjoin (install_args, ' '));
       out = pkj (install_args{:});
     endfunction
