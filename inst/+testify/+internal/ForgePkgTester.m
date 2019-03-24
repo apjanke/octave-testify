@@ -62,7 +62,7 @@ classdef ForgePkgTester < handle
   properties
     ## User-settable properties
     % If true, run doctest tests on packages in addition to regular BISTs
-    do_doctest = true;
+    do_doctest = false;
   endproperties
 
   properties

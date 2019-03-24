@@ -92,6 +92,11 @@ classdef Util
         diary on
       endif
     endfunction
+
+    function out = is_doctest_loaded ()
+      out = ! isempty (which ("doctest"));
+    endfunction
+    
   endmethods
 
 endclassdef
