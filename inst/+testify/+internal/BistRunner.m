@@ -173,7 +173,7 @@ classdef BistRunner < handle
       endif
     endfunction
 
-    function pick_run_tmp_dir (this)
+    function pick_and_create_run_tmp_dir (this)
       tmp_dir_base = sprintf ("bist-run-%s", datestr(now, 'yyyy-mm-dd_HH-MM-SS'));
       tmp_dir = fullfile (tempdir, "octave/testify/BistRunner", tmp_dir_base);
       mkdir (tmp_dir);
@@ -230,7 +230,8 @@ classdef BistRunner < handle
       persistent signal_file  = ">>>>> ";
       persistent signal_skip  = "----- ";
 
-      this.pick_run_tmp_dir;
+      this.pick_and_create_run_tmp_dir;
+      saved_files = false;
       out = testify.internal.BistRunResult;
       out.files_processed{end+1} = this.file;
 
@@ -389,6 +390,7 @@ classdef BistRunner < handle
               this.emit ("\nSaved test workspace is available in: %s\n", this.stashed_workspace_file);
               fprintf ("\nSaved test workspace is available in: %s\n", this.stashed_workspace_file);
             endif
+            saved_files = true;
             if this.fail_fast
               break
             endif
@@ -417,9 +419,13 @@ classdef BistRunner < handle
         this.emit ("test2: test file %s leaked global variables:%s\n",
                  this.file, sprintf (" %s", leaked_global_vars{:}));
       endif
+      ## TODO: Verify test did not leave file droppings
+
+      if ! saved_files
+        testify.internal.Util.rm_rf (this.run_tmp_dir);
+      endif
 
       out = rslt;
-
     endfunction
 
     function [success, rslt, msg] = run_test_code (this, block, workspace, rslt)
