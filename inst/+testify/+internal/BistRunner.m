@@ -367,7 +367,7 @@ classdef BistRunner < handle
                 # Unknown block type
                 msg = [signal_skip "skipped test (unknown BIST block type: " block.type ")\n"];
 
-          endswitch
+            endswitch
           unwind_protect_cleanup
             this.restore_diary_state (orig_diary_state)
           end_unwind_protect
