@@ -1009,8 +1009,8 @@ function out = configure_make (desc, packdir, verbose)
   % log_dir will still be populated and valid even if success is false.
 
   timestamp = datestr(now, 'yyyy-mm-dd_HH-MM-SS');
-  tmp_dir_name = ['octave-testify-ForgePkgInstaller-' timestamp];
-  log_dir = fullfile (tempdir, tmp_dir_name);
+  tmp_dir_name = ['testify-ForgePkgInstaller-' timestamp];
+  log_dir = fullfile (tempdir, 'octave/testify/build-logs', tmp_dir_name);
   mkdir (log_dir);
   out.log_dir = log_dir;
   out.success = true;

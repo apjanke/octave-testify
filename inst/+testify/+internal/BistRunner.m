@@ -175,7 +175,7 @@ classdef BistRunner < handle
 
     function pick_run_tmp_dir (this)
       tmp_dir_base = sprintf ("bist-run-%s", datestr(now, 'yyyy-mm-dd_HH-MM-SS'));
-      tmp_dir = fullfile (tempdir, "octave-testify-BistRunner", tmp_dir_base);
+      tmp_dir = fullfile (tempdir, "octave/testify/BistRunner", tmp_dir_base);
       mkdir (tmp_dir);
       this.run_tmp_dir = tmp_dir;
     endfunction

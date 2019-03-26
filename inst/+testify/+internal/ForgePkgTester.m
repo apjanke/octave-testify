@@ -126,13 +126,12 @@ classdef ForgePkgTester < handle
         forge_tester_out_dir = fullfile (testify.internal.Util.testify_data_dir, "forge-tester");
         group_tmp_dir = forge_tester_out_dir;
       else
-        tmp_dir_parent = "octave-testify-ForgePkgTester";
-        group_tmp_dir = fullfile (tempdir, tmp_dir_parent);
+        group_tmp_dir = tempname (tempdir, "octave/testify/ForgePkgTester/group-");
       endif
       mkdir (group_tmp_dir);
       this.output_dir = fullfile (group_tmp_dir, output_dir_base_name);
       this.build_log_dir = fullfile (this.output_dir, "build-logs");
-      this.tmp_run_dir = fullfile (tempdir, [output_dir_base_name "-run"]);
+      this.tmp_run_dir = tempname (tempdir, "octave/testify/forge-test-run/run-");
     endfunction
     
     function out = acquire_lock (this)

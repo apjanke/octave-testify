@@ -19,7 +19,7 @@
 classdef ForgePkgTool < handle
   
   properties
-    tmp_dir = fullfile (tempdir, "octave-testify-ForgePkgTool");
+    tmp_dir = tempname (tempdir, "octave/testify/ForgePkgTool/run-");
     download_cache_dir = fullfile (testify.internal.Util.testify_data_dir, ...
       "download-cache", "octave-forge");
     dependency_cache = cell (0, 2);
