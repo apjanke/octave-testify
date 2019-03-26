@@ -81,10 +81,6 @@ classdef Util
       fclose (fid);
     endfunction
 
-    function out = testify_data_dir ()
-      out = fullfile (getenv("HOME"), "octave", "testify");
-    endfunction
-
     function flush_diary ()
       [status, file] = diary;
       if status

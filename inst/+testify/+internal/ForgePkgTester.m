@@ -123,7 +123,7 @@ classdef ForgePkgTester < handle
       output_dir_base_name = ["testify-forge-" host "-" os_name "-" timestamp];
       if isunix && ! ismac
         % Need to write to ~ to make results readily available under Flatpak
-        forge_tester_out_dir = fullfile (testify.internal.Util.testify_data_dir, "forge-tester");
+        forge_tester_out_dir = fullfile (testify.internal.Config.testify_data_dir, "forge-tester");
         group_tmp_dir = forge_tester_out_dir;
       else
         group_tmp_dir = tempname (tempdir, "octave/testify/ForgePkgTester/group-");
@@ -135,7 +135,7 @@ classdef ForgePkgTester < handle
     endfunction
     
     function out = acquire_lock (this)
-      lock_dir = fullfile (testify.internal.Util.testify_data_dir, ...
+      lock_dir = fullfile (testify.internal.Config.testify_data_dir, ...
         "forge-tester", "locks");
       mkdir (lock_dir);
       lock_file = fullfile (lock_dir, "test.lock");
