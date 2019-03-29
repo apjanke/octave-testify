@@ -26,8 +26,11 @@ classdef BistWorkspace < handle
   properties
     % The names of the variables persisted in this workspace (cellstr)
     vars = {};
-    % The persisted values of the workspace variables
+    % The persisted ("shared") values of the workspace variables
     workspace = struct;
+    % The last seen state of the workspace after eval, including all
+    % variables, not just the persisted ones.
+    last_seen_workspace = struct
   endproperties
 
   methods
@@ -66,19 +69,35 @@ classdef BistWorkspace < handle
 
     function wax_off (this)
       %WAX_OFF Persist variables from caller function's workspace to this
+      wkspc = struct;
+      impl_vars = {"__this", "__out", "__code"};
+      all_vars = setdiff (evalin("caller", "who"), impl_vars);
+      for i = 1:numel (all_vars)
+        wkspc.(all_vars{i}) = evalin("caller", all_vars{i});
+      endfor
+      this.last_seen_workspace = wkspc;
       for i = 1:numel (this.vars)
         this.workspace.(this.vars{i}) = evalin ("caller", this.vars{i});
       endfor
     endfunction
 
-    function eval (__this, __code)
+    function [__out] = eval (__this, __code)
       %EVAL Evaluate code in the context of the persisted workspace
       __this.wax_on;
       unwind_protect
-        eval (__code);
+        if nargout == 0
+          eval (__code);
+        else
+          __out = eval (__code);
+        endif
       unwind_protect_cleanup
         __this.wax_off;
       end_unwind_protect
     endfunction
+
+    function clear_last_seen_workspace (this)
+      this.last_seen_workspace = struct;
+    endfunction
+    
   endmethods
 endclassdef

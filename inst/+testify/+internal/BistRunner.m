@@ -270,6 +270,7 @@ classdef BistRunner < handle
           if this.save_workspace_on_failure
             this.clear_stashed_workspace;
             this.stash_test_workspace ("before", workspace.workspace);
+            after_workspace = workspace.workspace;
           endif
           t0 = tic;
 
@@ -279,13 +280,13 @@ classdef BistRunner < handle
             switch block.type
 
               case { "test", "xtest", "assert", "fail" }
-                [success, rslt, msg] = run_test_code (this, block, workspace, rslt);
+                [success, rslt, msg, after_workspace] = run_test_code (this, block, workspace, rslt);
 
               case "testif"
                 have_feature = __have_feature__ (block.feature);
                 if have_feature
                   if isempty (block.runtime_feature_test) || eval (block.runtime_feature_test)
-                    [success, rslt, msg] = run_test_code (this, block, workspace, rslt);
+                    [success, rslt, msg, after_workspace] = run_test_code (this, block, workspace, rslt);
                   else
                     rslt.n_skip_runtime += 1;
                     msg = [signal_skip "skipped test (runtime test)"];
@@ -326,7 +327,12 @@ classdef BistRunner < handle
 
               case "error"
                 try
-                  workspace.eval (block.code);
+                  unwind_protect
+                    [~, after_workspace] = workspace.eval (block.code);
+                  unwind_protect_cleanup
+                    after_workspace = workspace.last_seen_workspace;
+                    workspace.clear_last_seen_workspace;
+                  end_unwind_protect
                   % No error raised - that's a test failure
                   success = false;
                   msg = [signal_fail "no error raised."];
@@ -345,7 +351,12 @@ classdef BistRunner < handle
                 warning ("on", "quiet");
                 unwind_protect
                   try
-                    workspace.eval (block.code);
+                    unwind_protect
+                      [~, after_workspace] = workspace.eval (block.code);
+                    unwind_protect_cleanup
+                      after_workspace = workspace.last_seen_workspace;
+                      workspace.clear_last_seen_workspace;
+                    end_unwind_protect
                     [warn_msg, warn_id] = lastwarn;
                     [ok, diagnostic] = this.warning_matches_expected (warn_msg, warn_id, block);
                     if ! ok
@@ -386,9 +397,9 @@ classdef BistRunner < handle
           else
             rslt = rslt.add_failed_file (this.file);
             if this.save_workspace_on_failure
-              this.stash_test_workspace ("after", workspace.workspace);              
-              this.emit ("\nSaved test workspace is available in: %s\n", this.stashed_workspace_file);
-              fprintf ("\nSaved test workspace is available in: %s\n", this.stashed_workspace_file);
+              this.stash_test_workspace ("after", after_workspace);
+              fprintf ("\n"); % in case prior output got cut off mid-line
+              fprintf ("Saved test workspace is available in: %s\n", this.stashed_workspace_file);
             endif
             saved_files = true;
             if this.fail_fast
@@ -428,11 +439,16 @@ classdef BistRunner < handle
       out = rslt;
     endfunction
 
-    function [success, rslt, msg] = run_test_code (this, block, workspace, rslt)
+    function [success, rslt, msg, after_workspace] = run_test_code (this, block, workspace, rslt)
       persistent signal_fail  = "!!!!! ";
       msg = "";
       try
-        workspace.eval (block.code);
+        unwind_protect
+          workspace.eval (block.code);
+        unwind_protect_cleanup
+          after_workspace = workspace.last_seen_workspace;
+          workspace.clear_last_seen_workspace;
+        end_unwind_protect
         success = true;
       catch err
         if isempty (lasterr ())
