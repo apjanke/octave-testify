@@ -298,6 +298,12 @@ classdef BistRunner < handle
 
               case "shared"
                 workspace = testify.internal.BistWorkspace (block.vars);
+                unwind_protect
+                  workspace.eval (block.code);
+                unwind_protect_cleanup
+                  after_workspace = workspace.last_seen_workspace;
+                  workspace.clear_last_seen_workspace;
+                end_unwind_protect
 
               case "function"
                 try
@@ -328,7 +334,7 @@ classdef BistRunner < handle
               case "error"
                 try
                   unwind_protect
-                    [~, after_workspace] = workspace.eval (block.code);
+                    workspace.eval (block.code);
                   unwind_protect_cleanup
                     after_workspace = workspace.last_seen_workspace;
                     workspace.clear_last_seen_workspace;
