@@ -232,8 +232,6 @@ classdef BistRunner < handle
 
       this.pick_and_create_run_tmp_dir;
       saved_files = false;
-      out = testify.internal.BistRunResult;
-      out.files_processed{end+1} = this.file;
 
       test_code = this.extract_test_code;
       if isempty (test_code)
@@ -256,7 +254,9 @@ classdef BistRunner < handle
       all_success = true;
 
       workspace = testify.internal.BistWorkspace;
+      % rslt is a running tally of all the results
       rslt = testify.internal.BistRunResult;
+      rslt.files_processed{end+1} = this.file;
       functions_to_clear = {};
 
       unwind_protect
