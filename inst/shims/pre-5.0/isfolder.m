@@ -21,5 +21,5 @@
 ## that don't have isfolder.
 
 function out = isfolder (f)
-  	out = exist (f, "dir");
+  out = exist (f, "dir");
 endfunction

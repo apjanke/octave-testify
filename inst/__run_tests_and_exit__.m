@@ -31,9 +31,9 @@ function __run_tests_and_exit__ (pkg_names)
   % pkg_names (cellstr) is a list of the packages to test. If omitted or empty,
   % tests all installed packages.
   try
-	  nfailed = __test_pkgs__ (pkg_names);
-	  fprintf ("Number of failed tests: %d\n", nfailed);
-	  exit (double (nfailed > 0));
+    nfailed = __test_pkgs__ (pkg_names);
+    fprintf ("Number of failed tests: %d\n", nfailed);
+    exit (double (nfailed > 0));
   catch err
     fprintf ("Caught error while running test suite: %s", err.message);
     exit (42);

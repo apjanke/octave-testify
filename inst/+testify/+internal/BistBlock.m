@@ -24,40 +24,40 @@ classdef BistBlock
   % block/statement.
 
   properties
-  	% The type of block this is, e.g. "demo", "shared", "test". May be any
-  	% string, including types that the BistBlock does not specifically know about.
-  	type = ""
-  	% The index of the block within the source file it came from. NaN for unknown.
-  	index = NaN
-  	% Whether this is valid. Set this flag false if there was a parsing error.
-  	is_valid = true
-  	% Error message for invalid blocks, to go with is_valid = false
-  	error_message
-  	% The unparsed contents of the block as a generic string
-  	contents = ""
-  	% Whether this is a test block of some sort
-  	is_test = false
-  	% Whether this is a test block that is expected to fail
-  	is_xtest = false
-  	% The code to run for blocks that have code, like "test"s or "shared"s
-  	code = ""
-  	% The variables defined by a "shared" block, as cellstr
-  	vars = {}
-  	% The name of the function defined by a "function" block
-  	function_name = [];
-  	% Bug ID for xtest-like blocks
-  	bug_id = ""
-  	fixed_bug = ""
-  	is_warning = false
+    % The type of block this is, e.g. "demo", "shared", "test". May be any
+    % string, including types that the BistBlock does not specifically know about.
+    type = ""
+    % The index of the block within the source file it came from. NaN for unknown.
+    index = NaN
+    % Whether this is valid. Set this flag false if there was a parsing error.
+    is_valid = true
+    % Error message for invalid blocks, to go with is_valid = false
+    error_message
+    % The unparsed contents of the block as a generic string
+    contents = ""
+    % Whether this is a test block of some sort
+    is_test = false
+    % Whether this is a test block that is expected to fail
+    is_xtest = false
+    % The code to run for blocks that have code, like "test"s or "shared"s
+    code = ""
+    % The variables defined by a "shared" block, as cellstr
+    vars = {}
+    % The name of the function defined by a "function" block
+    function_name = [];
+    % Bug ID for xtest-like blocks
+    bug_id = ""
+    fixed_bug = ""
+    is_warning = false
     % Regexp pattern for matching message in "error" and "warning" tests
-  	pattern = ""
-  	pat_str = ""
+    pattern = ""
+    pat_str = ""
     % Expected error identifier for "error" tests
-  	error_id = ""
-  	% Runtime feature test for "testif" blocks
-  	runtime_feature_test = ""
-  	% Feature for "testif" blocks
-  	feature = ""
+    error_id = ""
+    % Runtime feature test for "testif" blocks
+    runtime_feature_test = ""
+    % Feature for "testif" blocks
+    feature = ""
     % The whole text of the feature line for "testif" blocks (for debugging)
     feature_line = ""
   endproperties
@@ -142,14 +142,14 @@ classdef BistBlock
       disp(this.dispstr);
     endfunction
 
-  	function inspect (this)
-  	  origWarn = warning;
-  	  warning off Octave:classdef-to-struct
-  	  data = builtin ("struct", this);
-  	  warning (origWarn);
-  	  fprintf("BistBlock:\n");
-  	  disp (data);
-  	endfunction
+    function inspect (this)
+      origWarn = warning;
+      warning off Octave:classdef-to-struct
+      data = builtin ("struct", this);
+      warning (origWarn);
+      fprintf("BistBlock:\n");
+      disp (data);
+    endfunction
   endmethods
 
 endclassdef

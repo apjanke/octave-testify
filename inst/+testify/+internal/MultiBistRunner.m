@@ -153,8 +153,8 @@ classdef MultiBistRunner < handle
         f = fullfile (path, kids{i});
         if isfolder (f)
           if recurse
-	          out = [out this.search_directory(f, recurse)];
-	        endif
+            out = [out this.search_directory(f, recurse)];
+          endif
         else
           if this.looks_like_testable_file (f);
             out{end+1} = f;
@@ -324,13 +324,13 @@ classdef MultiBistRunner < handle
           file = files{i_file};
           if this.file_has_tests (file)
             print_test_file_name (file);
-		        runner = testify.internal.BistRunner (file);
+            runner = testify.internal.BistRunner (file);
             runner.log_fids = this.log_fid;
             runner.fail_fast = this.fail_fast;
             runner.save_workspace_on_failure = this.save_workspace_on_failure;
-          	rslt = runner.run_tests;
+            rslt = runner.run_tests;
             print_pass_fail (rslt);
-          	rslts = rslts + rslt;
+            rslts = rslts + rslt;
             if this.fail_fast && rslt.n_fail > 0
               abort = true;
               break
@@ -339,7 +339,7 @@ classdef MultiBistRunner < handle
             rslts.files_processed{end+1} = file;
           endif
         endfor
-	      # Display intermediate summary
+        # Display intermediate summary
         out = out + rslts;
         if abort
           break
@@ -354,25 +354,25 @@ classdef MultiBistRunner < handle
 
     endfunction
 
-		function out = file_has_tests (this, f)
-		  str = fileread (f);
-		  out = ! isempty (regexp (str,
-		                              '^%!(assert|error|fail|test|xtest|warning)',
-		                              'lineanchors', 'once'));
-		endfunction
+    function out = file_has_tests (this, f)
+      str = fileread (f);
+      out = ! isempty (regexp (str,
+                                  '^%!(assert|error|fail|test|xtest|warning)',
+                                  'lineanchors', 'once'));
+    endfunction
 
-		function out = file_has_functions (this, f)
-		  n = length (f);
-		  if endswith_any (lower (f), ".cc")
-		    str = fileread (f);
-		    retval = ! isempty (regexp (str,'^(?:DEFUN|DEFUN_DLD|DEFUNX)\>',
-		                                    'lineanchors', 'once'));
+    function out = file_has_functions (this, f)
+      n = length (f);
+      if endswith_any (lower (f), ".cc")
+        str = fileread (f);
+        retval = ! isempty (regexp (str,'^(?:DEFUN|DEFUN_DLD|DEFUNX)\>',
+                                        'lineanchors', 'once'));
       elseif endswith_any (lower (f), ".m")
-		    out = true;
-		  else
-		    out = false;
-		  endif
-		endfunction
+        out = true;
+      else
+        out = false;
+      endif
+    endfunction
 
     function out = parse_namespaced_thing (this, thing)
       % Parse a possibly namespace-qualified identifier.

@@ -236,8 +236,8 @@ classdef BistRunner < handle
 
       test_code = this.extract_test_code;
       if isempty (test_code)
-      	this.emit ("%s????? %s has no tests\n", this.file);
-      	return
+        this.emit ("%s????? %s has no tests\n", this.file);
+        return
       endif
       this.emit ("\n");
       this.emit (">>>>> %s\n", this.file);
@@ -552,12 +552,12 @@ classdef BistRunner < handle
         test_code = ["\n" test_code "\n#"];
       endif
       ## Chop it up into blocks for evaluation.
-	    out = {};
-	    ix_line = find (test_code == "\n");
-	    ix_block = ix_line(find (! isspace (test_code(ix_line + 1)))) + 1;
-	    for i = 1:numel (ix_block) - 1
-	      out{end+1} = test_code(ix_block(i):ix_block(i + 1) - 2);
-	    endfor
+      out = {};
+      ix_line = find (test_code == "\n");
+      ix_block = ix_line(find (! isspace (test_code(ix_line + 1)))) + 1;
+      for i = 1:numel (ix_block) - 1
+        out{end+1} = test_code(ix_block(i):ix_block(i + 1) - 2);
+      endfor
     endfunction
 
     function out = parse_test_code (this, test_code)
