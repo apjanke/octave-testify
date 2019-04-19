@@ -141,7 +141,7 @@ function varargout = test2 (name, varargin)
 
   opts = parse_args (name, varargin);
   if ! isempty (opts.log_file)
-    fid = fopen2 (opts.log_file, "wt");
+    fid = testify.internal.Util.fopen (opts.log_file, "wt");
     RAII.logfile = onCleanup (@() fclose(fid));
   else
     fid = stdout;

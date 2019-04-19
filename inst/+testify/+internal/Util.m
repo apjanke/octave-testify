@@ -76,7 +76,7 @@ classdef Util
     endfunction
 
     function filewrite (filename, str)
-      fid = fopen2 (filename, "w");
+      fid = testify.internal.Util.fopen (filename, "w");
       fprintf (fid, "%s", str);
       fclose (fid);
     endfunction
@@ -134,6 +134,14 @@ classdef Util
       endif
     endfunction
 
+    function fid = fopen (file, varargin)
+      %FOPEN Like regular fopen, but throws errors instead of returning status code
+      [fid, msg] = fopen (file, varargin{:});
+      if fid < 0
+        error ("Could not open file %s: %s", file, msg);
+      endif
+    endfunction
+    
   endmethods
 
 endclassdef

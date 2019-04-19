@@ -46,7 +46,7 @@ function varargout = __run_test_suite2__ (fcndirs, fixedtestdirs, topsrcdir = []
     rslts = testify.internal.BistRunResult;
     diary (top_log_file)
     diary on
-    log_fid = fopen2 (detail_log_file, "wt");
+    log_fid = testify.internal.Util.fopen (detail_log_file, "wt");
     dummy_runner = testify.internal.BistRunner;
     dummy_runner.print_results_format_key (log_fid);
     unwind_protect
@@ -79,7 +79,7 @@ endfunction
 
 function print_log_header (log_file)
   host = testify.internal.Util.safe_hostname;
-  fid = fopen2 (log_file, "w");
+  fid = testify.internal.Util.fopen (log_file, "w");
   fprintf (fid, "Tests run on %s at %s\n", host, datestr (now));
   fprintf (fid, "\n");
   testify.internal.LogHelper.display_system_info (fid);

@@ -106,7 +106,7 @@ function [p, __rslts__] = runtests2 (varargin)
   # Run tests and show results
 
   if ! isempty (opts.log_file)
-    [log_fid] = fopen2 (opts.log_file, "w");
+    [log_fid] = testify.internal.Util.fopen (opts.log_file, "w");
     runner.log_fid = log_fid;
     RAII.log_fid = onCleanup (@() fclose (log_fid));
   endif
