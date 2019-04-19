@@ -73,7 +73,7 @@ classdef BistBlock
 
     function out = dispstr (this)
       lines = {};
-      lines{end+1} = sprintf ("%s: %s (index=%d)", class (this), this.type, this.index);
+      lines{end+1} = sprintf ("test block %d: %s", this.index, this.type);
       if ! this.is_valid
         lines{end+1} = sprintf ("INVALID BLOCK!");
         lines{end+1} = "Contents:";

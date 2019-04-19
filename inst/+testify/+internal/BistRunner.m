@@ -732,6 +732,7 @@ classdef BistRunner < handle
           out.is_test = true;
           out.code = "";
       endswitch
+      out.code = regexprep(out.code, '^\r?\n', '');
     endfunction
 
     function out = find_function_name (this, def)
