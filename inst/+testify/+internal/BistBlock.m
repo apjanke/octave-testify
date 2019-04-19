@@ -47,7 +47,8 @@ classdef BistBlock
     function_name = [];
     % Bug ID for xtest-like blocks
     bug_id = ""
-    fixed_bug = ""
+    % Whether this identified bug has been marked as fixed
+    fixed_bug = false
     is_warning = false
     % Regexp pattern for matching message in "error" and "warning" tests
     pattern = ""
@@ -73,8 +74,9 @@ classdef BistBlock
 
     function out = dispstr (this)
       lines = {};
-      lines{end+1} = sprintf ("test block %d: %s", this.index, this.type);
+      line0 = sprintf ("test block %d: %s", this.index, this.type);
       if ! this.is_valid
+        lines{end+1} = line0;
         lines{end+1} = sprintf ("INVALID BLOCK!");
         lines{end+1} = "Contents:";
         lines{end+1} = this.contents;
@@ -82,58 +84,94 @@ classdef BistBlock
         return;
       endif
 
+      props0 = {};  % props to go on same line as "test block N: ..."
+      props1 = {};  % props to go on first line after that
+      props2 = {};  % props to go on second line after that
+      morelines = {};  % and then the rest
       switch this.type
         case "demo"
-          lines{end+1} = this.contents;
+          morelines{end+1} = this.contents;
         case "shared"
-          lines{end+1} = sprintf ("  vars: %s", strjoin (this.vars, " "));
+          morelines{end+1} = sprintf ("  vars: %s", strjoin (this.vars, " "));
           if ! isempty (this.code)
-            lines{end+1} = "Code:";
-            lines{end+1} = this.code;
+            morelines{end+1} = "Code:";
+            morelines{end+1} = this.code;
           endif
         case "function"
-          lines{end+1} = "Code:";
-          lines{end+1} = this.code;
+          morelines{end+1} = "Code:";
+          morelines{end+1} = this.code;
         case "endfunction"
           % NOP
         case {"assert", "fail"}
-          lines{end+1} = sprintf ("  is_test=%d  is_xtest=%d", this.is_test, this.is_xtest);
-          lines{end+1} = sprintf ("  bug_id=%s  fixed_bug=%s", this.bug_id, this.fixed_bug);
-          lines{end+1} = "Code:";
-          lines{end+1} = this.code;
+          props1{end+1} = sprintf("is_test=%d", this.is_test);
+          props1{end+1} = sprintf("is_xtest=%d", this.is_xtest);
+          if ! isempty(this.bug_id)
+            props1{end+1} = sprintf("bug_id=%s", this.bug_id);
+          endif
+          if this.fixed_bug
+            props1{end+1} = sprintf("fixed_bug=%d", this.fixed_bug);
+          endif
+          morelines{end+1} = "Code:";
+          morelines{end+1} = this.code;
         case {"error", "warning"}
-          lines{end+1} = sprintf ("  is_test=%d  is_xtest=%d", this.is_test, this.is_xtest);
-          lines{end+1} = sprintf ("  error_id='%s'", this.error_id);
-          lines{end+1} = sprintf ("  pattern=/%s/", this.pattern);
-          lines{end+1} = "Code:";
-          lines{end+1} = this.code;
+          props1{end+1} = sprintf("is_test=%d", this.is_test);
+          props1{end+1} = sprintf("is_xtest=%d", this.is_xtest);
+          if !isempty(this.error_id)
+            props0{end+1} = sprintf("id='%s'", this.error_id);
+          endif
+          if !isempty(this.pattern)
+            props0{end+1} = sprintf("/%s/", this.pattern);
+          endif
+          morelines{end+1} = "Code:";
+          morelines{end+1} = this.code;
         case "testif"
-          lines{end+1} = sprintf ("  is_test=%d  is_xtest=%d", this.is_test, this.is_xtest);
-          lines{end+1} = sprintf ("  feature_line='%s'", this.feature_line);
+          props1{end+1} = sprintf("is_test=%d", this.is_test);
+          props1{end+1} = sprintf("is_xtest=%d", this.is_xtest);
+          props2{end+1} = sprintf ("feature_line='%s'", this.feature_line);
           if iscellstr (this.feature)
             feat_str = ["{" strjoin(this.feature, ", ") "}"];
           else
             feat_str = this.feature;
           endif
-          lines{end+1} = sprintf ("  feature='%s'", feat_str);
-          lines{end+1} = sprintf ("  runtime_feature_test='%s'", this.runtime_feature_test);
-          lines{end+1} = "Code:";
-          lines{end+1} = this.code;
+          props2{end+1} = sprintf ("feature='%s'", feat_str);
+          if !isempty(this.runtime_feature_test)
+            props2{end+1} = sprintf ("  runtime_feature_test='%s'", this.runtime_feature_test);
+          end
+          morelines{end+1} = "Code:";
+          morelines{end+1} = this.code;
         case {"test", "xtest"}
-          lines{end+1} = sprintf ("  is_test=%d  is_xtest=%d", this.is_test, this.is_xtest);
-          lines{end+1} = sprintf ("  bug_id=%s  fixed_bug=%s", this.bug_id, this.fixed_bug);
-          lines{end+1} = "Code:";
-          lines{end+1} = this.code;
+          props1{end+1} = sprintf("is_test=%d", this.is_test);
+          props1{end+1} = sprintf("is_xtest=%d", this.is_xtest);
+          if ! isempty(this.bug_id)
+            props1{end+1} = sprintf("bug_id=%s", this.bug_id);
+          endif
+          if this.fixed_bug
+            props1{end+1} = sprintf("fixed_bug=%d", this.fixed_bug);
+          endif
+          morelines{end+1} = "Code:";
+          morelines{end+1} = this.code;
         case {"comment"}
-          lines{end+1} = "Contents:";
-          lines{end+1} = this.contents;
+          morelines{end+1} = "Contents:";
+          morelines{end+1} = this.contents;
         otherwise
-          lines{end+1} = sprintf ("  is_test=%d  is_xtest=%d", this.is_test, this.is_xtest);
-          lines{end+1} = "*** <unrecognized block type> ***";
-          lines{end+1} = "Contents:";
-          lines{end+1} = this.contents;
+          props1{end+1} = sprintf("is_test=%d", this.is_test);
+          props1{end+1} = sprintf("is_xtest=%d", this.is_xtest);
+          morelines{end+1} = "*** <unrecognized block type> ***";
+          morelines{end+1} = "Contents:";
+          morelines{end+1} = this.contents;
       endswitch
 
+      if !isempty(props0)
+        line0 = [line0 " " strjoin(props0, " ")];
+      endif
+      lines{end+1} = line0;
+      if !isempty(props1)
+        lines{end+1} = ["  " strjoin(props1, " ")];
+      endif
+      if !isempty(props2)
+        lines{end+1} = ["  " strjoin(props2, " ")];
+      endif
+      lines = [lines morelines];
       out = strjoin (lines, "\n");
     endfunction
 
