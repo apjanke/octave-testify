@@ -41,8 +41,9 @@ classdef BistResultsReporter
 		  this.p ("  GNU Octave Version: %s (hg id: %s)\n", OCTAVE_VERSION, hg_id);
 		  host = testify.internal.Util.safe_hostname;
 		  os_name = testify.internal.Util.os_name;
-		  this.p ("  Tests run on %s (%s) at %s\n", host, os_name, datestr (now));
-		  this.p ("  Test execution time: %.0f s\n", rslts.elapsed_wall_time);
+      this.p ("  Tests run on %s (%s) at %s\n", host, os_name, datestr (now));
+      duration = testify.internal.Duration(rslts.elapsed_wall_time);
+		  this.p ("  Test execution time: %s\n", char(duration));
 		  this.p ("\n");
 		  this.p ("  %-30s %6d\n", "PASS", rslts.n_pass);
 		  this.p ("  %-30s %6d\n", "FAIL", rslts.n_really_fail);
