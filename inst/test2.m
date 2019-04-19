@@ -173,6 +173,7 @@ function varargout = test2 (name, varargin)
   endif
 
   runner = testify.internal.BistRunner (file);
+  runner.show_failure_details = true;
   runner.fail_fast = opts.fail_fast;
   runner.shuffle = opts.shuffle;
   runner.save_workspace_on_failure = opts.save_workspace;

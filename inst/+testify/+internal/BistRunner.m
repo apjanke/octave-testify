@@ -31,6 +31,10 @@ classdef BistRunner < handle
     run_demo = false;
     % If true, will abort the test run immediately upon any failure
     fail_fast = false;
+    % If true, when a test block fails, will print out detailed info about it
+    % to the console (not to log_fids; they always get detailed output for both
+    % passes and failures).
+    show_failure_details = false;
     % Whether the test blocks should be shuffled.
     %  false:   no shuffle (default)
     %  true:    shuffle using a seed that BistRunner picks
@@ -405,6 +409,11 @@ classdef BistRunner < handle
           if (!success && !block.is_xtest)
             % Got a real failure
             rslt = rslt.add_failed_file (this.file);
+            if this.show_failure_details
+              fprintf ("----- Failure details: block %d -----\n", i_block);
+              fprintf ("%s %s \n", signal_block, block.dispstr);
+              fprintf ("  -> success=%d, msg=%s\n", success, msg);
+            endif
             if this.save_workspace_on_failure
               this.stash_test_workspace ("after", after_workspace);
               fprintf ("\n"); % in case prior output got cut off mid-line
@@ -412,6 +421,7 @@ classdef BistRunner < handle
             endif
             saved_files = true;
             if this.fail_fast
+              fprintf ("Aborted test run due to test failure.\n");
               break
             endif
           else
