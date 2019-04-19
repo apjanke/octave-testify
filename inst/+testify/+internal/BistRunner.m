@@ -439,7 +439,7 @@ classdef BistRunner < handle
         this.emit ("test2: test file %s leaked global variables:%s\n",
                  this.file, sprintf (" %s", leaked_global_vars{:}));
       endif
-      ## TODO: Verify test did not leave file droppings
+      ## TODO: Verify that test did not leave file droppings
 
       if ! saved_files
         testify.internal.Util.rm_rf (this.run_tmp_dir);
