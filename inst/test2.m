@@ -203,7 +203,12 @@ function varargout = test2 (name, varargin)
   runner.print_test_results (rslt, file, fid);
 
   if nargout > 0
-    varargout = {rslt.n_fail, rslt};
+    % You must do the assignment this way, instead of `varargout = {rslt.n_fail rslt};`
+    % to avoid a weird Octave error due to an implicit constructor call that seems
+    % like it shouldn't be happening.
+    varagout = cell(1, 2);
+    varargout{1} = rslt.n_fail;
+    varargout{2} = rslt;
   endif
 
 endfunction
