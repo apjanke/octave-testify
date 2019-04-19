@@ -397,7 +397,7 @@ classdef BistRunner < handle
 
           te = toc (t0);
           rslt.elapsed_wall_time += te;
-          this.emit ("  -> success=%d, msg=%s\n", success, msg);
+          this.emit ("--> success=%d, msg=%s\n", success, msg);
 
           if block.is_test
             % This logic is a little weird: run_test_code and its ilk update all
@@ -412,7 +412,7 @@ classdef BistRunner < handle
             if this.show_failure_details
               fprintf ("----- Failure details: block %d -----\n", i_block);
               fprintf ("%s %s \n", signal_block, block.dispstr);
-              fprintf ("  -> success=%d, msg=%s\n", success, msg);
+              fprintf ("--> success=%d, msg=%s\n", success, msg);
             endif
             if this.save_workspace_on_failure
               this.stash_test_workspace ("after", after_workspace);
