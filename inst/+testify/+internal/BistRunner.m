@@ -811,7 +811,7 @@ classdef BistRunner < handle
             fprintf (fid, "PASSES %d out of %d test%s (%d known failure%s)\n",
                     r.n_pass, r.n_test, ifelse (r.n_test > 1, "s", ""),
                     r.n_xfail, ifelse (r.n_xfail > 1, "s", ""));
-          elseif (__xbug)
+          elseif (r.n_xfail_bug)
             fprintf (fid, "PASSES %d out of %d test%s (%d known bug%s)\n",
                     r.n_pass, r.n_test, ifelse (r.n_test > 1, "s", ""),
                     r.n_xfail_bug, ifelse (r.n_xfail_bug > 1, "s", ""));
