@@ -401,9 +401,8 @@ classdef BistRunner < handle
             rslt.n_test += 1;
             rslt.n_pass += success;
           endif
-          if success
-            this.clear_stashed_workspace;
-          else
+          if (!success && !block.is_xtest)
+            % Got a real failure
             rslt = rslt.add_failed_file (this.file);
             if this.save_workspace_on_failure
               this.stash_test_workspace ("after", after_workspace);
@@ -414,7 +413,11 @@ classdef BistRunner < handle
             if this.fail_fast
               break
             endif
+          else
+            this.clear_stashed_workspace;
           endif
+          % TODO: Should probably test for (success && block.is_xtest) and count
+          % the unexpected PASSes.
         endfor
       unwind_protect_cleanup
         # Cleanup
