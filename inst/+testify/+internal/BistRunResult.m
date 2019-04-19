@@ -72,6 +72,9 @@ classdef BistRunResult
           failed_files = {};
         case 8
           [np, n, nxf, nxb, nsk, nrtsk, nrgrs, failed_files] = varargin{:};
+        otherwise
+          error ('BistRunResult: invalid number of inputs: %d (must be 0, 7, or 8)', ...
+            nargin);
       endswitch
       if ! iscellstr (failed_files)
         error ('failed_files input must be a cellstr');
