@@ -395,6 +395,9 @@ classdef BistRunner < handle
           this.emit ("  -> success=%d, msg=%s\n", success, msg);
 
           if block.is_test
+            % This logic is a little weird: run_test_code and its ilk update all
+            % the counters _except for_ n_test and n_pass, so they can be handled
+            % in a single point here based on success.
             rslt.n_test += 1;
             rslt.n_pass += success;
           endif
