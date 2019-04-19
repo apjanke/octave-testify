@@ -340,15 +340,17 @@ classdef MultiBistRunner < handle
           endif
         endfor
 	      # Display intermediate summary
-			  if (! isempty (rslts.files_with_no_tests))
-			    printf ("\nThe following files in %s have no tests:\n\n", tag);
-			    printf ("%s\n", list_in_columns (rslts.files_with_no_tests, [], "  "));
-			  endif
         out = out + rslts;
         if abort
           break
         endif
       endfor
+      if (! isempty (out.files_with_no_tests))
+        if (! isempty (this.log_fid))
+          fprintf (this.log_fid, "\nThe following files have no tests:\n\n");
+          fprintf (this.log_fid, "%s\n", list_in_columns (out.files_with_no_tests, [], "  "));
+        endif
+      endif
 
     endfunction
 
