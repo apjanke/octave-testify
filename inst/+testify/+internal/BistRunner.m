@@ -358,7 +358,7 @@ classdef BistRunner < handle
                 unwind_protect
                   try
                     unwind_protect
-                      [~, after_workspace] = workspace.eval (block.code);
+                      workspace.eval (block.code);
                     unwind_protect_cleanup
                       after_workspace = workspace.last_seen_workspace;
                       workspace.clear_last_seen_workspace;
@@ -505,6 +505,7 @@ classdef BistRunner < handle
     endfunction
 
     function [out, diagnostic] = warning_matches_expected (this, warn_msg, warn_id, block)
+      diagnostic = [];
       if ! isempty (block.error_id)
         out = isequal (warn_id, block.error_id);
         if ! out
