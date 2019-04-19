@@ -391,7 +391,7 @@ classdef BistRunner < handle
           end_unwind_protect
 
           te = toc (t0);
-          rslt.elapsed_wall_time = te;
+          rslt.elapsed_wall_time += te;
           this.emit ("  -> success=%d, msg=%s\n", success, msg);
 
           if block.is_test
