@@ -262,6 +262,9 @@ classdef BistRunner < handle
       % rslt is a running tally of all the results
       rslt = testify.internal.BistRunResult;
       rslt.files_processed{end+1} = this.file;
+      if ! isempty(blocks)
+        rslt.files_with_tests{end+1} = this.file;
+      endif
       functions_to_clear = {};
 
       unwind_protect

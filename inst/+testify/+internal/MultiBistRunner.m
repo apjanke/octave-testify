@@ -350,7 +350,8 @@ classdef MultiBistRunner < handle
       endfor
       if (! isempty (out.files_with_no_tests))
         if (! isempty (this.log_fid))
-          fprintf (this.log_fid, "\nThe following files have no tests:\n\n");
+          fprintf (this.log_fid, "\nThe following %d files have no tests:\n\n", ...
+            numel (out.files_with_no_tests));
           fprintf (this.log_fid, "%s\n", list_in_columns (out.files_with_no_tests, [], "  "));
         endif
       endif
