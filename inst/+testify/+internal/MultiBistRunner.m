@@ -129,13 +129,15 @@ classdef MultiBistRunner < handle
     endfunction
 
     function add_directory (this, path, tag, recurse = true)
-      if nargin < 3 || isempty (tag); tag = path; end
+      if nargin < 3 || isempty (tag)
+        tag = ["directory " path];
+      end
       if ! isfolder (path)
         error ("MultiBistRunner.add_directory: not a directory: %s", path);
       endif
 
       files = this.search_directory (path, recurse);
-      this.add_fileset (["directory " tag], files);
+      this.add_fileset (tag, files);
     endfunction
 
     function add_stuff_on_octave_search_path (this)
@@ -270,23 +272,24 @@ classdef MultiBistRunner < handle
       % Add the tests for all the Octave builtins
       testsdir = __octave_config_info__ ("octtestsdir");
       libinterptestdir = fullfile (testsdir, "libinterp");
+      this.add_directory (libinterptestdir, "Octave builtins: libinterp");
       liboctavetestdir = fullfile (testsdir, "liboctave");
-      fcnfiledir = __octave_config_info__ ("fcnfiledir");
-      fcndirs = { liboctavetestdir, libinterptestdir, fcnfiledir };
+      this.add_directory (liboctavetestdir, "Octave builtins: liboctave");
       fixedtestdir = fullfile (testsdir, "fixed");
-      fixedtestdirs = { fixedtestdir };
-
-      for i = 1:numel (fcndirs)
-        this.add_directory (fcndirs{i}, "Octave builtins: fcndirs");
-      endfor
-      for i = 1:numel (fixedtestdirs)
-        this.add_directory (fixedtestdirs{i}, "Octave builtins: fixed tests");
-      endfor
+      this.add_directory (fixedtestdir, "Octave builtins: fixed");
     endfunction
 
     function add_octave_standard_library (this)
-      m_dir = fullfile (matlabroot, "share", "octave", version, "m");
-      this.add_directory (m_dir, "Octave standard library");
+      % Add the tests for the M-code-implemented parts of the Octave "standard library"
+      %
+      % This is distinct from the add_octave_builtins() method, which adds
+      % just the built-in/compiled functions. Maybe these should be combined
+      % and add_octave_standard_library should do both. And actually that's a misnomer:
+      % The M-file directory contains functions for Octave's internal use, too,
+      % not just the public-facing API and its support. Not sure what the nomenclature
+      % should be here.
+      m_dir = __octave_config_info__ ("fcnfiledir");
+      this.add_directory (m_dir, "Octave Standard Library M-code");
     endfunction
 
     function add_octave_site_m_files (this)
