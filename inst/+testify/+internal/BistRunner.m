@@ -229,22 +229,22 @@ classdef BistRunner < handle
 
     function out = run_tests (this)
       %RUN_TESTS Run the tests found in this file
-      persistent signal_fail  = "!!!!! ";
-      persistent signal_empty = "????? ";
-      persistent signal_block = "***** ";
-      persistent signal_file  = ">>>>> ";
-      persistent signal_skip  = "----- ";
+      persistent signal_fail  = "!!!!!";
+      persistent signal_empty = "?????";
+      persistent signal_block = "*****";
+      persistent signal_file  = ">>>>>";
+      persistent signal_skip  = "-----";
 
       this.pick_and_create_run_tmp_dir;
       saved_files = false;
 
       test_code = this.extract_test_code;
       if isempty (test_code)
-        this.emit ("%s????? %s has no tests\n", this.file);
+        this.emit ("%s %s has no tests\n", signal_empty, this.file);
         return
       endif
       this.emit ("\n");
-      this.emit (">>>>> %s\n", this.file);
+      this.emit ("%s %s\n", signal_file, this.file);
       blocks = this.parse_test_code (test_code);
 
       blocks = this.maybe_shuffle_blocks (blocks);
