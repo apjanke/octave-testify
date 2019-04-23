@@ -48,3 +48,13 @@ The [Debian `dh-octave`](https://packages.debian.org/sid/dh-octave) package (for
 There's an [`octave-doctest` project](https://github.com/catch22/octave-doctest) for embedding tests/demos in Matlab-style helptext.
 
 Mike Miller is working on [`octave-test-suite` on GitLab](https://gitlab.com/mtmiller/octave-test-suite) which is focused on testing the interaction between the `octave` command and the external system.
+
+# Release Checklist
+
+* Update release in `DESCRIPTION`
+* `git commit`
+* Do `make dist` to make sure that it works
+* `git tag v<version>`
+* `git push; git push --tags`
+* Update release in `DESCRIPTION` to `<version>+` to open development on next release
+* `git commit -a; git push`
