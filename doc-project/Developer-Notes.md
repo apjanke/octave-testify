@@ -52,6 +52,7 @@ Mike Miller is working on [`octave-test-suite` on GitLab](https://gitlab.com/mtm
 # Release Checklist
 
 * Update release in `DESCRIPTION`
+* Update download instructions version in `README.md`
 * `git commit`
 * Do `make dist` to make sure that it works
 * `git tag v<version>`
