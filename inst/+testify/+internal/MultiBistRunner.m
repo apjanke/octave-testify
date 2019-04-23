@@ -77,17 +77,17 @@ classdef MultiBistRunner < handle
 
       # File or dir?
       canon_path = canonicalize_file_name (target);
-      if ! isempty (canon_path) && exist (canon_path, "file")
-        this.add_file (canon_path, tag);
-        return
-      elseif ! isempty (canon_path) &&  exist (canon_path, "dir")
+      if ! isempty (canon_path) &&  exist (canon_path, "dir")
         this.add_directory (canon_path, tag);
         return
-      elseif exist (target, "file")
-        this.add_file (target, tag);
+      elseif ! isempty (canon_path) && exist (canon_path, "file")
+        this.add_file (canon_path, tag);
         return
       elseif exist (target, "dir")
         this.add_directory (target, tag);
+        return
+      elseif exist (target, "file")
+        this.add_file (target, tag);
         return
       else
         # Search for dir on path
