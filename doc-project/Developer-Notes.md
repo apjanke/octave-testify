@@ -56,5 +56,9 @@ Mike Miller is working on [`octave-test-suite` on GitLab](https://gitlab.com/mtm
 * Do `make dist` to make sure that it works
 * `git tag v<version>`
 * `git push; git push --tags`
+* Create GitHub release
+  * Draft a release from the `v<version>` tag
+  * Note it as pre-release
+  * Upload the dist file resulting from that `make dist` you did
 * Update release in `DESCRIPTION` to `<version>+` to open development on next release
 * `git commit -a; git push`
