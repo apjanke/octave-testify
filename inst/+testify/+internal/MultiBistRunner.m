@@ -36,7 +36,7 @@ classdef MultiBistRunner < handle
     % or relative.
     files = cell (0, 2)
     % Extensions for files that might contain tests
-    test_file_extensions = {'.m', '.cc', '.cc-tst'}
+    test_file_extensions = {'.m', '.cc', '.cc-tst', '.tst'}
     % Control for shuffling test file order. true/false/double
     shuffle = false;
     % Whether to abort on test failure
