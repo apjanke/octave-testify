@@ -369,7 +369,7 @@ classdef MultiBistRunner < handle
       n = length (f);
       if endswith_any (lower (f), ".cc")
         str = fileread (f);
-        retval = ! isempty (regexp (str,'^(?:DEFUN|DEFUN_DLD|DEFUNX)\>',
+        out = ! isempty (regexp (str,'^(?:DEFUN|DEFUN_DLD|DEFUNX)\>',
                                         'lineanchors', 'once'));
       elseif endswith_any (lower (f), ".m")
         out = true;

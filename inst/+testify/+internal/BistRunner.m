@@ -241,6 +241,8 @@ classdef BistRunner < handle
       test_code = this.extract_test_code;
       if isempty (test_code)
         this.emit ("%s %s has no tests\n", signal_empty, this.file);
+        out = testify.internal.BistRunResult;
+        out.files_processed{end+1} = this.file;
         return
       endif
       this.emit ("\n");
