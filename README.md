@@ -4,7 +4,7 @@ Testify – New test/BIST functions for GNU Octave
 This is a collection of new and enhanced BIST (Built-In Self-Test) related functions for Octave.
 
 These override and replace some of Octave’s current test functions.
-This is intentional - this package started out as just a patch to Octave’s `__run_test_suite__`.
+This is intentional - this package started out as just a patch to Octave’s `__run_test_suite__`. But it grew into a full rewrite of the testing code.
 The goal here is to prototype something that might be a step forward for Octave’s current testing functionality.
 
 The goals of Testify’s new test functions are:
@@ -53,26 +53,30 @@ The `doctest` package is optional.
 
 Then, call one of Testify’s functions:
 
-* `test2` – a replacement for Octave’s regular `test`, with slight enhancements
-* `__run_test_suite2__` - just like Octave’s regular `__run_test_suite__`, but with (IMHO) nicer output.
-* `__test_pkgs__` – a new function for running tests on installed `pkg` packages.
-* `testify.install_and_test_forge_pkgs` – tests Forge packages
+* `runtests2` – Run tests in files, directories, classes, pkg packages, or in Octave itself.
+* `test2` – A replacement for Octave’s regular `test`, with slight enhancements. Tests a single file.
+* `__run_test_suite2__` – Just like Octave’s regular `__run_test_suite__`, but with (IMHO) nicer output.
+* `__run_tests_and_exit__` – Runs tests and exits, like it says.
+* `testify.install_and_test_forge_pkgs` – Tests Forge packages
+
+See the helptext of these functions for details. (E.g. `help runtests2` in Octave.)
 
 ## What's In Here
 
-Conceptually, all the code in `inst` here could drop right in to `scripts/testfun/` in the `octave` hg repo.
-It's all in the root namespace, expected to shadow existing core Octave code.
+Conceptually, all the code in `inst` here could drop right in to `scripts/testfun/` in the `octave` hg repo. The main test functions users are expected to use are in the root namespace.
 
-#### Externally Visible
+There's a whole object-oriented interface to the tests under the `+testify` namespace, but that's intended primarily for Testify's internal use. Once it's stable and proven to be useful, perhaps we'll make it public.
+
+#### Externally Visible Stuff
 
 <dl>
-<dt><code>test2</code></dt
+<dt><code>runtests2</code></dt>
+<dd>Runs tests on one or more files, directories, classes, or pkg packages.</dd>
+<dt><code>test2</code></dt>
 <dd>A replacement for Octave’s current <code>test</code>. Nothing special about it just yet.</dd>
 <dt><code>__run_test_suite2__</code></dt>
 <dd>A replacement for Octave’s current <code>__run_test_suite__</code>.
 Nothing much new here; just internal changes to support the <code>BistRunResult</code> abstraction.</dd>
-<dt><code>__test_pkgs__</code></dt>
-<dd>A function for running tests on a <code>pkg</code> package of Octave code.</dd>
 <dt><code>__run_tests_and_exit__</code></dt>
 <dd>A function for running tests and using <code>octave</code>’s exit status to indicate success or failure.
 For use in Continuous Integration or automated testing environments.</dd>
@@ -80,7 +84,7 @@ For use in Continuous Integration or automated testing environments.</dd>
 <dd>A function for testing the installation and internal package tests/BISTs of Octave Forge packages.</dd>
 </dl>
 
-#### Internal Changes
+#### Notable Internal Stuff
 
 <dl>
 <dt><code>testify.internal.BistRunResult</code></dt>
