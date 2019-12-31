@@ -78,6 +78,7 @@
 ##
 ## Arguments 2 and later are parsed as options. Valid options:
 ##
+## @verbatim
 ##   -quiet            - Run in quiet output mode, with minimal output
 ##   -normal           - Run in normal output mode
 ##   -verbose          - Run in verbose output mode, displaying individual test items
@@ -93,14 +94,21 @@
 ##   verbose           - Alias for -verbose
 ##   grabdemo          - Alias for -grabdemo
 ##   explain           - Alias for -explain
+## @end verbatim
 ##
 ## When called with output arguments (and not in @qcode{"-grabdemo"} or @qcode{"-explain"}
 ## mode), returns the following outputs:
-##   @code{success} - True if all tests passed, false otherwise
-##   @code{__rslt__} - An object holding results data. The format of this object
-##                     is undocumented and subject to change at any time.
-##   @code{__info__} - A struct or object of other info about the test run. The format
-##                       of this object is undocumented and subject to change at any time.
+##
+## @itemize @minus
+## @item @code{success}
+## True if all tests passed, false otherwise
+## @item @code{__rslt__}
+## An object holding results data. The format of this object is undocumented and
+## subject to change at any time.
+## @item @code{__info__}
+## A struct or object of other info about the test run. The format of this
+## object is undocumented and subject to change at any time.
+## @end itemize
 ##
 ## Example
 ##

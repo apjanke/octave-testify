@@ -33,20 +33,30 @@
 ## starts with a "@", it is always interpreted as a class. Directories may be
 ## either regular paths, or a directory that is on the Octave load path.
 ##
-## Options:
+## Typically the type of a target is autodetected. You can also explicitly
+## specify the type of a target using one of the following target specifications:
 ##
-##   -file <name>
-##   -dir <name>
+## Target types:
+##
+## @verbatim
+##   -file <name>         - Run tests in a file
+##   -dir <name>          - Run tests in all files in a directory
 ##   -class <name>        - Test a class
 ##   -function <name>     - Test a function
-##   -pkg <name>          - Test an installed pkg package
+##   -pkg <name>          - Test an installed pkg (Octave Forge) package
 ##   -search-path         - Test everything on the Octave search path
 ##   -octave-builtins     - Test Octave's interpreter and built-in functions
+## @end verbatim
+##
+## Options:
+##
+## @verbatim
 ##   -shuffle             - Shuffle file sets and file orders
 ##   -shuffle-seed <seed> - Shuffle file sets and file orders with given seed
 ##   -fail-fast           - Abort the test run upon the first test failure
 ##   -save-workspace      - Save test workspaces for failed tests
 ##   -log-file <file>     - File to write detailed test log info to
+## @end verbatim
 ##
 ## If no target is specified, operates on all directories in Octave's search
 ## path. (The same as -search-path.)
@@ -59,8 +69,6 @@
 ##
 ## @seealso{rundemos, test, path}
 ## @end deftypefn
-
-## Author: jwe
 
 function [p, __rslts__] = runtests2 (varargin)
 
