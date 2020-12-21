@@ -1,5 +1,4 @@
-Testify – New test/BIST functions for GNU Octave
-================================================
+# Testify – New test/BIST functions for GNU Octave
 
 This is a collection of new and enhanced BIST (Built-In Self-Test) related functions for Octave.
 
@@ -7,7 +6,10 @@ These override and replace some of Octave’s current test functions.
 This is intentional - this package started out as just a patch to Octave’s `__run_test_suite__`. But it grew into a full rewrite of the testing code.
 The goal here is to prototype something that might be a step forward for Octave’s current testing functionality.
 
+## Goals
+
 The goals of Testify’s new test functions are:
+
 * Richer abstractions for representing test results
 * Nicer output format
   * Including summary results that make it easier to copy-paste meaningful test failure reports to the octave-maintainers list
@@ -30,7 +32,7 @@ If enough people want it, I’ll try to make it happen.
 
 To get started using or testing this project, install it and its dependencies using Octave’s `pkg` function:
 
-```
+```octave
 pkg install -forge doctest
 pkg install https://github.com/apjanke/octave-testify/releases/download/v0.3.3/testify-0.3.3.tar.gz
 pkg load doctest testify
@@ -65,7 +67,7 @@ Conceptually, all the code in `inst` here could drop right in to `scripts/testfu
 
 There's a whole object-oriented interface to the tests under the `+testify` namespace, but that's intended primarily for Testify's internal use. Once it's stable and proven to be useful, perhaps we'll make it public.
 
-#### Externally Visible Stuff
+### Externally Visible Stuff
 
 <dl>
 <dt><code>runtests2</code></dt>
@@ -82,7 +84,7 @@ For use in Continuous Integration or automated testing environments.</dd>
 <dd>A function for testing the installation and internal package tests/BISTs of Octave Forge packages.</dd>
 </dl>
 
-#### Notable Internal Stuff
+### Notable Internal Stuff
 
 <dl>
 <dt><code>testify.internal.BistRunResult</code></dt>
