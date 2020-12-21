@@ -14,8 +14,6 @@ The goals of Testify’s new test functions are:
 * Convenience functions for testing packages and related code units
 * Integration with CI (“continuous integration”) platforms/harnesses
 
-Functions in this package shadow Octave-provided functions. This is intentional.
-
 See files in the `doc-project` directory for more documentation.
 
 ### Non-Goals
